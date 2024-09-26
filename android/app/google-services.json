@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "633466708065",
+    "firebase_url": "https://precios-cotizawebbuilder-default-rtdb.firebaseio.com",
+    "project_id": "precios-cotizawebbuilder",
+    "storage_bucket": "precios-cotizawebbuilder.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:633466708065:android:df024e60668d775a704a20",
+        "android_client_info": {
+          "package_name": "com.ando.devs.cotizawebbuilder"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB22zYJTI6igp6eU7fk4KWDTctPCQpSnVM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:633466708065:android:85ae0c519b193eab704a20",
+        "android_client_info": {
+          "package_name": "com.cotizawebbuilder.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB22zYJTI6igp6eU7fk4KWDTctPCQpSnVM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
