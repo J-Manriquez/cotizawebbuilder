@@ -1,3 +1,16 @@
+// build.gradle (proyecto raíz)
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Este es el lugar correcto para agregar el classpath de google-services
+        classpath 'com.google.gms:google-services:4.3.15'  // Usa la última versión estable
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -5,6 +18,7 @@ allprojects {
     }
 }
 
+// Opcional: Configuración personalizada del directorio de construcción
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
