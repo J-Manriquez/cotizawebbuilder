@@ -1,328 +1,872 @@
-import 'package:flutter/material.dart'; // Importa el paquete de Flutter para la creación de interfaces de usuario.
-import 'package:cloud_firestore/cloud_firestore.dart'; // Importa Firestore para el uso de la base de datos en tiempo real.
-import 'package:firebase_core/firebase_core.dart'; // Importa Firebase Core para inicializar Firebase.
-import 'firebase_options.dart'; // Importa opciones de configuración de Firebase.
+import 'package:flutter/material.dart';
+// Importa el script de servicio de Firebase
+import 'firebase_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-void main() async { // Función principal asíncrona de la aplicación.
-  WidgetsFlutterBinding.ensureInitialized(); // Asegura que los widgets de Flutter estén inicializados.
-  await Firebase.initializeApp( // Inicializa Firebase con las opciones predeterminadas.
-    options: DefaultFirebaseOptions.currentPlatform, // Utiliza las opciones de Firebase para la plataforma actual.
-  );
-  runApp(const MyApp()); // Ejecuta la aplicación MyApp.
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ServicioFirebase.inicializarFirebase();
+  await ServicioFirebase.obtenerPrecios();
+  runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget { // Clase que define un widget con estado.
-  const MyApp({super.key}); // Constructor de MyApp que permite claves únicas.
-  
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
   @override
-  MyAppState createState() => MyAppState(); // Crea el estado para MyApp.
+  AppState createState() => AppState();
 }
 
-class MyAppState extends State<MyApp> { // Clase que maneja el estado de MyApp.
-  Map<String, dynamic> precios = {}; // Mapa para almacenar los precios obtenidos de Firestore.
-  final Map<String, String?> _selectedOptions = {}; // Mapa para almacenar las opciones seleccionadas por el usuario.
-  final TextEditingController _resultController = TextEditingController(); // Controlador para el campo de texto que muestra el resultado.
+class AppState extends State<MyApp> {
+  final Map<String, String?> _opcionesSeleccionadas = {};
+  final TextEditingController _controladorResultado = TextEditingController();
+
+  // Definir los colores personalizados - mantenemos los mismos
+  final Color colorPrimario =
+      const Color.fromARGB(255, 59, 59, 59); // #2ccacbff
+  final Color colorSecundario =
+      const Color.fromARGB(255, 155, 154, 154); // #ff7387ff
+  final Color colorFondo = const Color.fromARGB(
+      255, 240, 240, 240); // Cambiado a blanco para más elegancia
+
+  // Índice del formulario actual
+  int _indiceFormularioActual = 0;
+
+  // Estado de finalización
+  bool _formularioFinalizado = false;
+
+  // Lista de etiquetas para controlar la navegación
+  final List<String> _etiquetasFormularios = [
+    'Creación',
+    'SEO',
+    'Blogs',
+    'Mantenimiento',
+    'Productos',
+    'Dominio',
+    'Hosting'
+  ];
 
   @override
-  void initState() { // Método que se ejecuta al iniciar el estado.
-    super.initState(); // Llama al método initState de la clase base.
-    _fetchPricesFromFirestore(); // Llama a la función para obtener precios de Firestore.
-  }
+  Widget build(BuildContext context) {
+    // Determinar si la pantalla es pequeña (vertical) o grande (horizontal)
+    final bool esPantallaHorizontal = MediaQuery.of(context).size.width > 767;
 
-  Future<void> _fetchPricesFromFirestore() async { // Método asíncrono para obtener precios de Firestore.
-    print('Intentando obtener el documento de Firestore...'); // Imprime un mensaje de intento.
-    try { // Intenta ejecutar el bloque de código.
-      DocumentSnapshot doc = await FirebaseFirestore.instance // Obtiene un documento de Firestore.
-         .collection('precios') // Selecciona la colección 'precios'.
-         .doc('lista_precios') // Selecciona el documento 'lista_precios'.
-         .get(); // Obtiene el documento.
-
-      if (doc.exists) { // Verifica si el documento existe.
-        print('Documento encontrado en Firestore.'); // Imprime un mensaje de éxito.
-        setState(() { // Actualiza el estado del widget.
-          precios = doc.data() as Map<String, dynamic>; // Almacena los datos del documento en precios.
-        });
-      } else { // Si el documento no existe.
-        print('No se encontró el documento.'); // Imprime un mensaje de error.
-      }
-    } catch (e) { // Captura cualquier error que ocurra.
-      print('Error al obtener el documento: $e'); // Imprime el error.
-    }
-  }
-
-  String _formatOptionWithPrice(String optionKey, [String priceKey = 'valor_ofrecido']) { // Método para formatear la opción con el precio.
-    if (precios.containsKey(optionKey)) { // Verifica si la clave de opción está en precios.
-      // Obtener el precio y formatearlo
-      int price = (precios[optionKey][priceKey] as num).round(); // Obtiene el precio y lo redondea.
-      return '${_formatOptionName(optionKey)} - \$${_formatNumberWithDots(price)}'; // Devuelve el nombre de la opción y el precio formateado.
-    } else { // Si la clave no se encuentra en precios.
-      print('Clave $optionKey no encontrada en los precios.'); // Imprime un mensaje de error.
-      return '${_formatOptionName(optionKey)} - Precio no disponible'; // Devuelve un mensaje indicando que el precio no está disponible.
-    }
-  }
-
-  // Función para formatear el número con separadores de miles
-  String _formatNumberWithDots(int number) { // Método para formatear números.
-    return number.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.'); // Reemplaza los números con separadores de miles.
-  }
-
-  String _formatOptionName(String optionKey) { // Método para formatear el nombre de la opción.
-    return optionKey
-        .replaceAll('_', ' ') // Reemplaza guiones bajos con espacios.
-        .split(' ') // Divide la cadena en palabras.
-        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '') // Capitaliza la primera letra de cada palabra.
-        .join(' ') // Une las palabras de nuevo en una cadena.
-        .trim(); // Elimina espacios en blanco al inicio y al final.
-  }
-
-  @override
-  Widget build(BuildContext context) { // Método que construye la interfaz de usuario.
-    return MaterialApp( // Crea la aplicación material.
-      debugShowCheckedModeBanner: false, // Oculta el banner de depuración en modo debug.
-      title: 'CotizaWebBuilder', // Título de la aplicación.
-      theme: ThemeData.dark(), // Aplica un tema oscuro.
-      home: Scaffold( // Crea un Scaffold para la estructura de la página.
-        appBar: AppBar( // Crea una barra de aplicación.
-          title: const Text('CotizaWebBuilder'), // Título de la barra de aplicación.
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'COTIZA WEB BUILDER',
+      theme: ThemeData(
+        colorScheme: ColorScheme.light(
+          primary: colorPrimario,
+          secondary: colorSecundario,
+          background: colorFondo,
+          surface: Colors.white,
+          onSurface: Colors.black87,
         ),
-        body: Padding( // Aplica un relleno alrededor del cuerpo de la página.
-          padding: const EdgeInsets.all(20.0), // Establece el relleno a 20.0 píxeles en todos los lados.
-          child: Column( // Crea una columna para organizar los widgets verticalmente.
-            crossAxisAlignment: CrossAxisAlignment.start, // Alinea los widgets al inicio de la columna.
-            children: [ // Lista de hijos para la columna.
-              const Text( // Widget de texto constante.
-                'Selección de Servicios', // Contenido del texto.
-                style: TextStyle( // Estilo del texto.
-                  fontSize: 30, // Tamaño de fuente.
-                  fontWeight: FontWeight.bold, // Peso de fuente en negrita.
+        scaffoldBackgroundColor: colorFondo,
+        appBarTheme: AppBarTheme(
+          backgroundColor: colorPrimario,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorPrimario,
+            foregroundColor: Colors.white,
+            // padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30), // Bordes cuadrados
+            ),
+            elevation: 0, // Sin sombra para un look más plano y formal
+          ),
+        ),
+        cardTheme: CardTheme(
+          elevation: 0, // Sin sombras
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30), // Bordes cuadrados
+            side: BorderSide(
+                color: Colors.grey.shade300, width: 1), // Borde sutil
+          ),
+          color: Colors.white,
+        ),
+        textTheme: const TextTheme(
+          headlineMedium:
+              TextStyle(fontWeight: FontWeight.w500, letterSpacing: 0.5),
+          titleLarge:
+              TextStyle(fontWeight: FontWeight.w500, letterSpacing: 0.5),
+          titleMedium: TextStyle(
+              fontWeight: FontWeight.w400), // Más ligero para elegancia
+          bodyLarge: TextStyle(fontSize: 16),
+          bodyMedium: TextStyle(fontSize: 15),
+        ),
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Stack(
+            children: [
+              // Texto con borde blanco
+              Text(
+                'COTIZA TU WEB',
+                style: GoogleFonts.poppins(
+                  fontSize: 24, // Ajusta el tamaño
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.w900,
+                  foreground: Paint()
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 3
+                    ..color = Colors.white, // Borde blanco
                 ),
-                textAlign: TextAlign.center, // Alinea el texto al centro.
               ),
-              const SizedBox(height: 20), // Espacio vertical de 20 píxeles.
-              Expanded( // Widget que expande su hijo para llenar el espacio disponible.
-                child: SingleChildScrollView( // Permite desplazamiento cuando el contenido es más grande que la pantalla.
-                  child: Column( // Crea otra columna para organizar más widgets.
-                    crossAxisAlignment: CrossAxisAlignment.start, // Alinea los hijos al inicio.
-                    children: [ // Lista de hijos para la columna.
-                      _buildDescriptionAndDropdown( // Llama al método para construir descripción y dropdown para 'Creación'.
-                        'Creación', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'Adaptación de plantilla: Uso y ajuste de una plantilla preexistente.',
-                          'Personalización de plantilla: Modificación de una plantilla existente según requerimientos específicos.',
-                          'Creación personalizada desde cero: Diseño y desarrollo de un sitio web totalmente a medida.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          'adaptacion_plantilla',
-                          'personalizacion_plantilla',
-                          'creacion_personalizada',
-                        ],
-                      ),
-                      _buildDescriptionAndDropdown( // Llama al método para 'SEO'.
-                        'SEO', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'SEO Básico: Optimización básica para motores de búsqueda.',
-                          'SEO Avanzado: Optimización avanzada para motores de búsqueda, incluyendo creación de blogs.',
-                          'Sin SEO: No se aplica optimización para motores de búsqueda.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          'seo_basico',
-                          'seo_avanzado',
-                          'sin_seo',
-                        ],
-                      ),
-                      _buildDescriptionAndDropdown( // Llama al método para 'Blogs'.
-                        'Blogs', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'Blogs: Creación de contenido de blogs, sólo disponible con SEO Avanzado.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          '0_blogs',
-                          '1_blog',
-                          '2_blog',
-                          '3_blog',
-                          '4_blog',
-                        ],
-                        visible: _selectedOptions['SEO'] == 'seo_avanzado', // Visibilidad depende de la opción de SEO seleccionada.
-                      ),
-                      _buildDescriptionAndDropdown( // Llama al método para 'Mantenimiento'.
-                        'Mantenimiento', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'Mantenimiento Básico: Soporte básico y actualizaciones periódicas.',
-                          'Mantenimiento Estándar: Soporte intermedio con actualizaciones más frecuentes.',
-                          'Mantenimiento Avanzado: Soporte completo con actualizaciones regulares y soporte prioritario dentro del horario laboral. Incluye creación de un blog al mes.',
-                          'Sin Mantenimiento: No se incluye servicio de mantenimiento.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          'mantenimiento_basico',
-                          'mantenimiento_estandar',
-                          'mantenimiento_avanzado',
-                          'sin_mantenimiento',
-                        ],
-                      ),
-                      _buildDescriptionAndDropdown( // Llama al método para 'Productos'.
-                        'Productos', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'Limite de Productos: Restricción en el número de productos gestionables en la web.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          'limite_25_productos',
-                          'limite_50_productos',
-                          'limite_100_productos',
-                          'limite_150_productos',
-                          'limite_500_productos',
-                          'ilimitado_productos',
-                        ],
-                      ),
-                      _buildDescriptionAndDropdown( // Llama al método para 'Dominio'.
-                        'Dominio', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'Dominio: Incluye la gestión del dominio.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          'dominio_previo',
-                          'sin_dominio_previo',
-                        ],
-                      ),
-                      _buildDescriptionAndDropdown( // Llama al método para 'Hosting'.
-                        'Hosting', // Etiqueta del dropdown.
-                        [ // Descripciones asociadas a la opción.
-                          'Hosting: Incluye el servicio de hosting para la web.',
-                        ],
-                        [ // Claves de opciones para seleccionar.
-                          'hosting_previo',
-                          'sin_hosting_previo',
-                        ],
-                      ),
-                      const SizedBox(height: 20), // Espacio vertical de 20 píxeles.
-                      Center( // Envuelve el botón en un widget Center para centrarlo.
-                        child: SizedBox( // Usa un Container para establecer el ancho del botón.
-                          width: double.infinity, // Establece el ancho al 100%.
-                          child: ElevatedButton( // Crea un botón elevado.
-                            onPressed: _calculateAndDisplayResult, // Acción a realizar al presionar el botón.
-                            child: const Text('Calcular'), // Texto del botón.
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20), // Espacio vertical de 20 píxeles.
-                      TextField( // Crea un campo de texto.
-                        controller: _resultController, // Controlador del campo de texto.
-                        maxLines: 10, // Número máximo de líneas.
-                        readOnly: true, // Hace que el campo de texto sea de solo lectura.
-                        decoration: const InputDecoration( // Estilo del campo de texto.
-                          hintText: 'Resultado', // Texto de sugerencia cuando está vacío.
-                          border: OutlineInputBorder(), // Añade un borde al campo de texto.
-                        ),
-                      ),
-                    ],
-                  ),
+              // Texto principal
+              Text(
+                'COTIZA TU WEB',
+                style: GoogleFonts.poppins(
+                  fontSize: 24,
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.w900,
+                  color: colorSecundario, // Color principal
                 ),
               ),
             ],
           ),
         ),
+        body: Padding(
+          padding: const EdgeInsets.all(
+              24.0), // Más padding para más espaciado elegante
+          child: esPantallaHorizontal
+              ? _construirLayoutHorizontal()
+              : _construirLayoutVertical(),
+        ),
       ),
     );
   }
 
-  Widget _buildDescriptionAndDropdown(String label, List<String> descriptions, List<String> options, {bool visible = true}) { // Método para construir descripción y dropdown.
-    return Visibility( // Controla la visibilidad del widget.
-      visible: visible, // Determina si el widget es visible o no.
-      child: Column( // Crea una columna para organizar los elementos.
-        crossAxisAlignment: CrossAxisAlignment.start, // Alinea los hijos al inicio.
-        children: [ // Lista de hijos para la columna.
-          Text( // Crea un widget de texto para la etiqueta.
-            label, // Contenido de la etiqueta.
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), // Estilo del texto.
+  // Layout para pantallas horizontales (más de 767px)
+  Widget _construirLayoutHorizontal() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sección A (70% del ancho)
+        Expanded(
+          flex: 7,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: colorPrimario, width: 2.5),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0), // Más padding para elegancia
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Indicador de progreso
+                  _construirIndicadorProgreso(),
+                  const SizedBox(height: 32), // Más espacio
+                  // const Text(
+                  //   'Selección de Servicios',
+                  //   style: TextStyle(
+                  //     fontSize: 24,
+                  //     fontWeight: FontWeight.w300, // Más ligero para elegancia
+                  //     color: Colors.black87,
+                  //     letterSpacing: 1.0, // Más espaciado para elegancia
+                  //   ),
+                  // ),
+                  // Container(
+                  //   height: 1, // Línea divisoria más fina
+                  //   color: const Color.fromARGB(60, 0, 0, 0),
+                  //   margin: const EdgeInsets.symmetric(
+                  //       vertical: 4, horizontal: 60), // Espacio para respirar
+                  // ),
+                  // Formulario actual
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: _construirFormularioActual(),
+                    ),
+                  ),
+                  // Botones de navegación
+                  _construirBotonesNavegacion(),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 8), // Espacio vertical de 8 píxeles.
-          ...descriptions.map((desc) => Padding( // Mapea sobre las descripciones y crea un widget de relleno.
-            padding: const EdgeInsets.symmetric(vertical: 4), // Aplica relleno vertical.
-            child: Text(desc), // Crea un widget de texto para la descripción.
-          )),
-          const SizedBox(height: 8), // Espacio vertical de 8 píxeles.
-          DropdownButtonFormField<String?>( // Crea un campo de dropdown.
-            value: _selectedOptions[label], // Establece el valor seleccionado.
-            onChanged: (value) { // Callback que se ejecuta al cambiar el valor.
-              setState(() { // Actualiza el estado del widget.
-                _selectedOptions[label] = value; // Almacena el nuevo valor seleccionado.
-              });
-            },
-            items: options.map((option) { // Mapea sobre las opciones para crear los elementos del dropdown.
-              return DropdownMenuItem<String?>( // Crea un item para el dropdown.
-                value: option, // Establece el valor del item.
-                child: Text(_formatOptionWithPrice(option)), // Muestra el texto del item formateado.
-              );
-            }).toList(), // Convierte el iterable a una lista.
+        ),
+        const SizedBox(width: 24), // Más espacio entre columnas
+        // Sección B (30% del ancho)
+        Expanded(
+          flex: 3,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: colorPrimario, width: 2.5),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0), // Más padding para elegancia
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _formularioFinalizado
+                        ? 'Cotización de su Web'
+                        : 'Cotización Parcial',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w300, // Más ligero para elegancia
+                      color: Colors.black87,
+                      letterSpacing: 1.0, // Más espaciado para elegancia
+                    ),
+                  ),
+                  Container(
+                    height: 1, // Línea divisoria más fina
+                    color: colorPrimario,
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 14), // Espacio para respirar
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _controladorResultado,
+                      maxLines: 15,
+                      readOnly: true,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.6, // Más altura de línea
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Aún no hay items seleccionados',
+                        border: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(0), // Bordes cuadrados
+                          borderSide: const BorderSide(
+                            color: Color.fromARGB(112, 95, 95, 95),
+                            width: 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          // Borde cuando NO está enfocado
+                          borderRadius: BorderRadius.circular(0),
+                          borderSide: BorderSide(
+                              color: Colors
+                                  .grey.shade300), // ¡Correcto! Borde gris
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(0), // Bordes cuadrados
+                          borderSide: BorderSide(
+                            color: colorPrimario, // Color al enfocarse
+                            width: 1,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        filled: false,
+                        fillColor: const Color.fromARGB(
+                            255, 255, 255, 255), // Fondo blanco
+                      ),
+                    ),
+                  ),
+                  _mostrarBotonesCotizacion(),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 16), // Espacio vertical de 16 píxeles.
+        ),
+      ],
+    );
+  }
+
+  // Layout para pantallas verticales (menos de 767px)
+  Widget _construirLayoutVertical() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Sección de título
+        Text(
+          'Selección de Servicios',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w300, // Más ligero para elegancia
+            color: Colors.black87,
+            letterSpacing: 1.0, // Más espaciado para elegancia
+          ),
+        ),
+        const SizedBox(height: 20),
+        // Indicador de progreso
+        _construirIndicadorProgreso(),
+        const SizedBox(height: 24),
+        // Sección A
+        Expanded(
+          flex: 6,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Formulario actual
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: _construirFormularioActual(),
+                    ),
+                  ),
+                  // Botones de navegación
+                  _construirBotonesNavegacion(),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24), // Más espacio entre secciones
+        // Sección B
+        Expanded(
+          flex: 4,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _formularioFinalizado
+                        ? 'Cotización de su Web'
+                        : 'Cotización Parcial',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300, // Más ligero para elegancia
+                      color: Colors.black87,
+                      letterSpacing: 1.0, // Más espaciado para elegancia
+                    ),
+                  ),
+                  Container(
+                    height: 1, // Línea divisoria más fina
+                    color: Colors.grey.shade200,
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 20), // Espacio para respirar
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: _controladorResultado,
+                      maxLines: null,
+                      readOnly: true,
+                      style: const TextStyle(
+                          fontSize: 14, height: 1.6), // Más altura de línea
+                      decoration: InputDecoration(
+                        hintText: 'Aún no hay items seleccionados',
+                        border: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(0), // Bordes cuadrados
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(0), // Bordes cuadrados
+                          borderSide:
+                              BorderSide(color: colorPrimario, width: 1),
+                        ),
+                        contentPadding: const EdgeInsets.all(16),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                      ),
+                    ),
+                  ),
+                  _mostrarBotonesCotizacion(),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Construye el indicador de progreso - rediseñado para ser más elegante
+  Widget _construirIndicadorProgreso() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Selección Etapa ${_indiceFormularioActual + 1}',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.0,
+                color: Colors.black,
+              ),
+            ),
+            Text(
+              '${_indiceFormularioActual + 1}/${_etiquetasFormularios.length}',
+              style: TextStyle(
+                color: colorPrimario,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Indicador de progreso elegante
+        Container(
+          height: 2, // Barra fina para elegancia
+          child: LinearProgressIndicator(
+            value: (_indiceFormularioActual + 1) / _etiquetasFormularios.length,
+            backgroundColor: colorSecundario,
+            color: colorPrimario,
+            minHeight: 2,
+            borderRadius: BorderRadius.zero, // Sin bordes redondeados
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Construye el formulario actual según el índice
+  Widget _construirFormularioActual() {
+    String etiquetaActual = _etiquetasFormularios[_indiceFormularioActual];
+
+    // Determina si el formulario de Blogs debe ser visible (solo si SEO avanzado está seleccionado)
+    bool mostrarBlogs = etiquetaActual == 'Blogs' &&
+        _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
+
+    // Si es el formulario de Blogs y SEO no es avanzado, saltamos al siguiente formulario
+    if (etiquetaActual == 'Blogs' &&
+        _opcionesSeleccionadas['SEO'] != 'seo_avanzado') {
+      // Avanzamos automáticamente al siguiente formulario
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _indiceFormularioActual++;
+          // Eliminamos Blogs de las opciones seleccionadas si no es SEO avanzado
+          _opcionesSeleccionadas.remove('Blogs');
+          _actualizarCotizacion();
+        });
+      });
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    switch (etiquetaActual) {
+      case 'Creación':
+        return _construirDescripcionYDropdown(
+          'Creación',
+          [
+            'Adaptación de plantilla: Uso y ajuste de una plantilla preexistente.',
+            'Personalización de plantilla: Modificación de una plantilla existente según requerimientos específicos.',
+            'Creación personalizada desde cero: Diseño y desarrollo de un sitio web totalmente a medida.',
+          ],
+          [
+            'adaptacion_plantilla',
+            'personalizacion_plantilla',
+            'creacion_personalizada',
+          ],
+        );
+      case 'SEO':
+        return _construirDescripcionYDropdown(
+          'SEO',
+          [
+            'SEO Básico: Optimización básica para motores de búsqueda.',
+            'SEO Avanzado: Optimización avanzada para motores de búsqueda, incluyendo creación de blogs.',
+            'Sin SEO: No se aplica optimización para motores de búsqueda.',
+          ],
+          [
+            'seo_basico',
+            'seo_avanzado',
+            'sin_seo',
+          ],
+        );
+      case 'Blogs':
+        return _construirDescripcionYDropdown(
+          'Blogs',
+          [
+            'Blogs: Creación de contenido de blogs, sólo disponible con SEO Avanzado.',
+          ],
+          [
+            '0_blogs',
+            '1_blog',
+            '2_blog',
+            '3_blog',
+            '4_blog',
+          ],
+          visible: mostrarBlogs,
+        );
+      case 'Mantenimiento':
+        return _construirDescripcionYDropdown(
+          'Mantenimiento',
+          [
+            'Mantenimiento Básico: Soporte básico y actualizaciones periódicas.',
+            'Mantenimiento Estándar: Soporte intermedio con actualizaciones más frecuentes.',
+            'Mantenimiento Avanzado: Soporte completo con actualizaciones regulares y soporte prioritario dentro del horario laboral. Incluye creación de un blog al mes.',
+            'Sin Mantenimiento: No se incluye servicio de mantenimiento.',
+          ],
+          [
+            'mantenimiento_basico',
+            'mantenimiento_estandar',
+            'mantenimiento_avanzado',
+            'sin_mantenimiento',
+          ],
+        );
+      case 'Productos':
+        return _construirDescripcionYDropdown(
+          'Productos',
+          [
+            'Limite de Productos: Restricción en el número de productos gestionables en la web.',
+          ],
+          [
+            'limite_25_productos',
+            'limite_50_productos',
+            'limite_100_productos',
+            'limite_150_productos',
+            'limite_500_productos',
+            'ilimitado_productos',
+          ],
+        );
+      case 'Dominio':
+        return _construirDescripcionYDropdown(
+          'Dominio',
+          [
+            'Dominio: Incluye la gestión del dominio.',
+          ],
+          [
+            'dominio_previo',
+            'sin_dominio_previo',
+          ],
+        );
+      case 'Hosting':
+        return _construirDescripcionYDropdown(
+          'Hosting',
+          [
+            'Hosting: Incluye el servicio de hosting para la web.',
+          ],
+          [
+            'hosting_previo',
+            'sin_hosting_previo',
+          ],
+        );
+      default:
+        return const SizedBox();
+    }
+  }
+
+  // Construye los botones de navegación (Anterior/Siguiente) - Rediseñados para ser más elegantes
+  Widget _construirBotonesNavegacion() {
+    bool esPrimerFormulario = _indiceFormularioActual == 0;
+    bool esUltimoFormulario =
+        _indiceFormularioActual == _etiquetasFormularios.length - 1;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 32.0), // Más espacio arriba
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Botón Anterior (no mostrar en el primer formulario)
+          if (!esPrimerFormulario)
+            TextButton.icon(
+              icon: const Icon(
+                Icons.arrow_back,
+                size: 16,
+                color: Colors.white,
+              ),
+              label: const Text('Anterior',
+                  style: TextStyle(
+                      letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+              onPressed: () {
+                setState(() {
+                  _indiceFormularioActual--;
+
+                  if (_etiquetasFormularios[_indiceFormularioActual] ==
+                          'Blogs' &&
+                      _opcionesSeleccionadas['SEO'] != 'seo_avanzado') {
+                    _indiceFormularioActual--;
+                  }
+
+                  _formularioFinalizado = false;
+                  _actualizarCotizacion();
+                });
+              },
+              style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: const Color.fromARGB(255, 0, 0, 0)),
+            )
+          else
+            const SizedBox(),
+
+          // Botón Siguiente o Finalizar
+          if (!esUltimoFormulario)
+            ElevatedButton.icon(
+              icon: const Icon(
+                Icons.arrow_forward,
+                size: 16,
+                color: Colors.white,
+              ),
+              label: const Text('Siguiente',
+                  style: TextStyle(
+                      letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+              onPressed: _puedeAvanzarAlSiguiente()
+                  ? () {
+                      setState(() {
+                        _indiceFormularioActual++;
+
+                        if (_etiquetasFormularios[_indiceFormularioActual] ==
+                                'Blogs' &&
+                            _opcionesSeleccionadas['SEO'] != 'seo_avanzado') {
+                          _indiceFormularioActual++;
+                        }
+
+                        _actualizarCotizacion();
+                      });
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: colorPrimario.withOpacity(0.3),
+                  foregroundColor: Colors.white,
+                  backgroundColor: const Color.fromARGB(255, 0, 0, 0)),
+            )
+          else
+            ElevatedButton.icon(
+              icon: const Icon(
+                Icons.check,
+                size: 16,
+                color: Color.fromARGB(255, 255, 255, 255),
+              ),
+              label: const Text('Finalizar',
+                  style: TextStyle(
+                      letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+              onPressed: _puedeAvanzarAlSiguiente()
+                  ? () {
+                      setState(() {
+                        _formularioFinalizado = true;
+                        _actualizarCotizacion();
+                      });
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                disabledBackgroundColor: colorPrimario.withOpacity(0.3),
+                foregroundColor: Colors.white,
+                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  void _calculateAndDisplayResult() { // Método para calcular y mostrar el resultado.
-    List<String?> missingFields = []; // Lista para almacenar campos faltantes.
-    
-    // Revisar campos obligatorios
-    for (String field in ['Creación', 'SEO', 'Mantenimiento', 'Productos', 'Dominio', 'Hosting']) { // Itera sobre los campos obligatorios.
-      if (_selectedOptions[field] == null) { // Verifica si el campo está vacío.
-        missingFields.add(field); // Añade el campo faltante a la lista.
-      }
+  // Verifica si se puede avanzar al siguiente formulario
+  bool _puedeAvanzarAlSiguiente() {
+    String etiquetaActual = _etiquetasFormularios[_indiceFormularioActual];
+
+    // Si es el formulario de Blogs y SEO no es avanzado, permitimos avanzar
+    if (etiquetaActual == 'Blogs' &&
+        _opcionesSeleccionadas['SEO'] != 'seo_avanzado') {
+      return true;
     }
 
-    // Revisar campo de Blogs solo si SEO Avanzado está seleccionado
-    if (_selectedOptions['SEO'] == 'seo_avanzado' && _selectedOptions['Blogs'] == null) { // Verifica si SEO Avanzado está seleccionado y Blogs está vacío.
-      missingFields.add('Blogs'); // Añade 'Blogs' a la lista de campos faltantes.
-    }
+    // Para otros formularios, verificamos que haya una opción seleccionada
+    return _opcionesSeleccionadas.containsKey(etiquetaActual) &&
+        _opcionesSeleccionadas[etiquetaActual] != null;
+  }
 
-    // Si hay campos faltantes, mostrar un mensaje
-    if (missingFields.isNotEmpty) { // Si hay campos faltantes.
-      String message = 'Por favor, selecciona una opción en los siguientes campos antes de continuar:\n'; // Mensaje de advertencia.
-      message += missingFields.join(', '); // Agrega los campos faltantes al mensaje.
-      _resultController.text = message; // Muestra el mensaje en el controlador de texto.
-      return; // Sale del método.
-    }
+  // Actualiza la cotización parcial
+  void _actualizarCotizacion() {
+    int precioValorOfrecido = 0;
+    int precioNacional = 0;
+    int precioInternacional = 0;
 
-    int precioValorOfrecido = 0; // Inicializa el precio total ofrecido.
-    int precioNacional = 0; // Inicializa el precio nacional.
-    int precioInternacional = 0; // Inicializa el precio internacional.
+    String cotizacionParcial = 'Resumen de Cotización\n\n';
 
-    _selectedOptions.forEach((key, value) { // Itera sobre las opciones seleccionadas.
-      if (value != null && precios.containsKey(value)) { // Verifica que la opción no sea nula y esté en precios.
-        precioValorOfrecido += (precios[value]?['valor_ofrecido'] as num? ?? 0).round(); // Suma el precio ofrecido.
-        precioNacional += (precios[value]?['nacional'] as num? ?? 0).round(); // Suma el precio nacional.
-        precioInternacional += (precios[value]?['internacional'] as num? ?? 0).round(); // Suma el precio internacional.
+    _opcionesSeleccionadas.forEach((clave, valor) {
+      if (valor != null && ServicioFirebase.precios.containsKey(valor)) {
+        precioValorOfrecido +=
+            (ServicioFirebase.precios[valor]?['valor_ofrecido'] as num? ?? 0)
+                .round();
+        precioNacional +=
+            (ServicioFirebase.precios[valor]?['nacional'] as num? ?? 0).round();
+        precioInternacional +=
+            (ServicioFirebase.precios[valor]?['internacional'] as num? ?? 0)
+                .round();
+
+        // Agregamos esta opción al resumen
+        cotizacionParcial += '$clave: ${_obtenerTextoOpcion(valor, clave)}\n';
       }
     });
 
-    String blogsText = ''; // Inicializa el texto de blogs.
-    if (_selectedOptions['SEO'] == 'seo_avanzado') { // Verifica si SEO Avanzado está seleccionado.
-      blogsText = 'Opción de Blogs: ${_getOptionText(_selectedOptions['Blogs'], 'Blogs')}'; // Agrega el texto de la opción de blogs.
-    }
+    cotizacionParcial += '\nPrecios Estimados\n\n';
+    cotizacionParcial +=
+        'Precio Valor Ofrecido: \$${ServicioFirebase.formatearNumeroConPuntos(precioValorOfrecido)}\n';
+    cotizacionParcial +=
+        'Precio Nacional: \$${ServicioFirebase.formatearNumeroConPuntos(precioNacional)}\n';
+    cotizacionParcial +=
+        'Precio Internacional: \$${ServicioFirebase.formatearNumeroConPuntos(precioInternacional)}';
 
-    String result = ''' 
-Resumen de Cotización
-
-Opción de Creación: ${_getOptionText(_selectedOptions['Creación'], 'Creación')}
-Opción de SEO: ${_getOptionText(_selectedOptions['SEO'], 'SEO')}
-$blogsText
-Opción de Mantenimiento: ${_getOptionText(_selectedOptions['Mantenimiento'], 'Mantenimiento')}
-Opción de Productos: ${_getOptionText(_selectedOptions['Productos'], 'Productos')}
-Opción de Dominio: ${_getOptionText(_selectedOptions['Dominio'], 'Dominio')}
-Opción de Hosting: ${_getOptionText(_selectedOptions['Hosting'], 'Hosting')}
-
-Precios
-
-Precio Valor Ofrecido: \$${_formatNumberWithDots(precioValorOfrecido)} 
-Precio Nacional: \$${_formatNumberWithDots(precioNacional)} 
-Precio Internacional: \$${_formatNumberWithDots(precioInternacional)} 
-''';
-
-    _resultController.text = result; // Muestra el resultado en el controlador de texto.
+    _controladorResultado.text = cotizacionParcial;
   }
 
-  String? _getOptionText(String? value, String label) { // Método para obtener el texto de la opción seleccionada.
-    if (value == null) return null; // Si el valor es nulo, retorna nulo.
-    return _formatOptionWithPrice(value); // Devuelve el texto de la opción formateado.
+  // Muestra u oculta los botones de cotización final - rediseñados para ser más elegantes
+  Widget _mostrarBotonesCotizacion() {
+    if (_formularioFinalizado && _todoFormularioCompleto()) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 24.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.email, size: 16),
+              label: const Text('Enviar Cotización',
+                  style: TextStyle(
+                      letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+              onPressed: () {
+                // TODO: Implementar envío de cotización
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorSecundario,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.download, size: 16, color: Colors.white,),
+              label: const Text('Descargar',
+                  style: TextStyle(
+                      letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+              onPressed: () {
+                // TODO: Implementar descarga de cotización
+              },
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox();
+  }
+
+  // Verifica si todo el formulario está completo
+  bool _todoFormularioCompleto() {
+    List<String> formularioObligatorios = [
+      'Creación',
+      'SEO',
+      'Mantenimiento',
+      'Productos',
+      'Dominio',
+      'Hosting'
+    ];
+
+    if (_opcionesSeleccionadas['SEO'] == 'seo_avanzado') {
+      formularioObligatorios.add('Blogs');
+    }
+
+    for (String formulario in formularioObligatorios) {
+      if (!_opcionesSeleccionadas.containsKey(formulario) ||
+          _opcionesSeleccionadas[formulario] == null) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Rediseñado para un aspecto más profesional y formal
+  Widget _construirDescripcionYDropdown(
+      String etiqueta, List<String> descripciones, List<String> opciones,
+      {bool visible = true}) {
+    return Visibility(
+      visible: visible,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            etiqueta,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w300, // Más ligero para elegancia
+              color: Colors.black87,
+              letterSpacing: 0.8, // Más espaciado para elegancia
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: 1, // Línea más fina
+            width: 150,
+            color: colorSecundario,
+            margin: const EdgeInsets.only(bottom: 20),
+          ),
+          ...descripciones.map((desc) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  desc,
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 15,
+                    height:
+                        1.6, // Mayor espacio entre líneas para mejor lectura
+                    letterSpacing: 0.3, // Ligero espaciado para más elegancia
+                  ),
+                ),
+              )),
+          const SizedBox(height: 24), // Más espacio
+          DropdownButtonFormField<String?>(
+            value: _opcionesSeleccionadas[etiqueta],
+            onChanged: (valor) {
+              setState(() {
+                _opcionesSeleccionadas[etiqueta] = valor;
+
+                // Si cambiamos SEO de avanzado a otra opción, eliminamos Blogs
+                if (etiqueta == 'SEO' && valor != 'seo_avanzado') {
+                  _opcionesSeleccionadas.remove('Blogs');
+                  _actualizarCotizacion();
+                }
+              });
+            },
+            dropdownColor: Colors.white,
+            decoration: InputDecoration(
+              labelText: 'Seleccione una opción',
+              labelStyle:
+                  TextStyle(color: Colors.grey.shade600, letterSpacing: 0.3),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0), // Bordes cuadrados
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0), // Bordes cuadrados
+                borderSide: BorderSide(color: colorPrimario, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(0), // Bordes cuadrados
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+            icon: Icon(Icons.keyboard_arrow_down, color: colorPrimario),
+            isExpanded: true,
+            items: opciones.map((opcion) {
+              return DropdownMenuItem<String?>(
+                value: opcion,
+                child: Text(
+                  ServicioFirebase.formatearOpcionConPrecio(opcion),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    letterSpacing: 0.3, // Ligero espaciado para más elegancia
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 32), // Más espacio para dar "aire" al diseño
+        ],
+      ),
+    );
+  }
+
+  String? _obtenerTextoOpcion(String? valor, String etiqueta) {
+    if (valor == null) return null;
+    return ServicioFirebase.formatearOpcionConPrecio(valor);
   }
 }
