@@ -323,4 +323,46 @@ class UIComponents {
                 ]),
     );
   }
+
+  
+// Helper para InputDecoration (puedes moverlo a UIComponents si prefieres)
+
+   static InputDecoration getInputDecoration({
+    required String labelText,
+    required String hintText,
+    required Color primaryColor,
+    IconData? prefixIcon,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: primaryColor.withOpacity(0.7)) : null,
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: BorderSide(color: primaryColor, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.0),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 12.0),
+    );
+  }
 }
+
+
+

@@ -1,4 +1,4 @@
-// ignore_for_file: unused_local_variable
+// ignore_for_file: unused_local_variable, unused_import
 
 // Importaciones estándar de Flutter y Dart
 import 'package:flutter/foundation.dart';
@@ -13,6 +13,8 @@ import 'ui_components.dart';
 import 'main.dart'; // Para acceder a MyApp.colorPrimario, etc.
 // Importa el NUEVO servicio para manejar la lógica del PDF
 import 'pdf_service.dart';
+import 'confirmation_screen.dart'; // Importa la nueva pantalla
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -436,17 +438,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Botones de Acción Final (Enviar/Descargar)
-                  // El botón de descarga ahora llama a _handlePdfGeneration
+                  // --- BOTONES DE ACCIÓN FINAL RESTAURADOS ---
                   if (_formularioFinalizado && _todoFormularioCompleto())
                     UIComponents.buildFinalActionButtons(
-                      onSendQuote: () {/* TODO: Implementar lógica de envío */},
+                      context: context, // Pasa el contexto
+                      onSendQuote: () {
+                        // <--- AQUÍ VA LA NAVEGACIÓN
+                        // Asegúrate que la cotización esté actualizada
+                        _actualizarCotizacion();
+                        // Navega a la pantalla de confirmación
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ConfirmationScreen(
+                              opcionesSeleccionadas:
+                                  Map.from(_opcionesSeleccionadas),
+                              cotizacionTextoResumen:
+                                  _controladorResultado.text,
+                              pdfService: _pdfService,
+                              pdfFontsReady: _pdfFontsReady,
+                            ),
+                          ),
+                        );
+                      },
                       onDownloadQuote:
-                          _handlePdfGeneration, // Llama al nuevo manejador
+                          _handlePdfGeneration, // La descarga sigue igual
                       primaryColor: colorPrimario,
                       secondaryColor: colorSecundario,
-                      // Habilita el botón de descarga solo si las fuentes están listas
-                      isDownloadEnabled: _pdfFontsReady, context: context,
+                      isDownloadEnabled: _pdfFontsReady,
                     ),
                 ],
               ),
@@ -572,15 +591,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Botones de Acción Final
+                // --- BOTONES DE ACCIÓN FINAL RESTAURADOS ---
                 if (_formularioFinalizado && _todoFormularioCompleto())
                   UIComponents.buildFinalActionButtons(
-                    onSendQuote: () {/* TODO: Implementar lógica de envío */},
-                    onDownloadQuote: _handlePdfGeneration,
+                    context: context, // Pasa el contexto
+                    onSendQuote: () {
+                      // <--- AQUÍ VA LA NAVEGACIÓN
+                      // Asegúrate que la cotización esté actualizada
+                      _actualizarCotizacion();
+                      // Navega a la pantalla de confirmación
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ConfirmationScreen(
+                            opcionesSeleccionadas:
+                                Map.from(_opcionesSeleccionadas),
+                            cotizacionTextoResumen: _controladorResultado.text,
+                            pdfService: _pdfService,
+                            pdfFontsReady: _pdfFontsReady,
+                          ),
+                        ),
+                      );
+                    },
+                    onDownloadQuote:
+                        _handlePdfGeneration, // La descarga sigue igual
                     primaryColor: colorPrimario,
                     secondaryColor: colorSecundario,
                     isDownloadEnabled: _pdfFontsReady,
-                    context: context,
                   ),
               ],
             ),
