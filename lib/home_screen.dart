@@ -1,4 +1,3 @@
-
 // ignore_for_file: unused_local_variable
 
 // Importaciones estándar de Flutter y Dart
@@ -43,7 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- Instancia del Servicio PDF ---
   // Se crea una instancia del servicio que encapsula la lógica del PDF
   final PdfService _pdfService = PdfService();
-  bool _pdfFontsReady = false; // Estado para saber si las fuentes PDF están listas
+  bool _pdfFontsReady =
+      false; // Estado para saber si las fuentes PDF están listas
 
   // --- Ciclo de Vida del Widget ---
 
@@ -60,7 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Llama al método del servicio para cargar las fuentes necesarias para el PDF
       await _pdfService.loadFonts();
       setState(() {
-        _pdfFontsReady = true; // Actualiza el estado indicando que las fuentes están listas
+        _pdfFontsReady =
+            true; // Actualiza el estado indicando que las fuentes están listas
       });
       print("Fuentes PDF inicializadas correctamente desde HomeScreen.");
     } catch (e) {
@@ -70,14 +71,16 @@ class _HomeScreenState extends State<HomeScreen> {
         _pdfFontsReady = false;
       });
       // Muestra un mensaje al usuario sobre el error
-      if (mounted) { // Verifica si el widget todavía está montado antes de mostrar el SnackBar
+      if (mounted) {
+        // Verifica si el widget todavía está montado antes de mostrar el SnackBar
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al preparar las fuentes para PDF: ${e.toString()}')),
+          SnackBar(
+              content: Text(
+                  'Error al preparar las fuentes para PDF: ${e.toString()}')),
         );
       }
     }
   }
-
 
   @override
   void dispose() {
@@ -92,7 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
     String etiquetaActual = _etiquetasFormularios[_indiceFormularioActual];
 
     // Caso especial: Blogs no requiere selección si SEO no es avanzado
-    if (etiquetaActual == 'Blogs' && _opcionesSeleccionadas['SEO'] != 'seo_avanzado') {
+    if (etiquetaActual == 'Blogs' &&
+        _opcionesSeleccionadas['SEO'] != 'seo_avanzado') {
       return true; // Se permite avanzar (saltará automáticamente)
     }
 
@@ -111,34 +115,42 @@ class _HomeScreenState extends State<HomeScreen> {
     _opcionesSeleccionadas.forEach((clave, valor) {
       if (valor != null && ServicioFirebase.precios.containsKey(valor)) {
         // Usa la función del servicio Firebase para formatear la descripción y precios
-        cotizacionTexto += '$clave: ${ServicioFirebase.formatearOpcionConPrecio(valor)}\n';
+        cotizacionTexto +=
+            '$clave: ${ServicioFirebase.formatearOpcionConPrecio(valor)}\n';
 
         final precioData = ServicioFirebase.precios[valor]!;
-        precioValorOfrecido += (precioData['valor_ofrecido'] as num? ?? 0).round();
+        precioValorOfrecido +=
+            (precioData['valor_ofrecido'] as num? ?? 0).round();
         precioNacional += (precioData['nacional'] as num? ?? 0).round();
-        precioInternacional += (precioData['internacional'] as num? ?? 0).round();
+        precioInternacional +=
+            (precioData['internacional'] as num? ?? 0).round();
       }
     });
 
     cotizacionTexto += '\nPrecios Estimados\n\n';
     // Usa la función del servicio Firebase para formatear los números totales
-    cotizacionTexto += 'Precio Valor Ofrecido: \$${ServicioFirebase.formatearNumeroConPuntos(precioValorOfrecido)}\n';
-    cotizacionTexto += 'Precio Nacional: \$${ServicioFirebase.formatearNumeroConPuntos(precioNacional)}\n';
-    cotizacionTexto += 'Precio Internacional: \$${ServicioFirebase.formatearNumeroConPuntos(precioInternacional)}';
+    cotizacionTexto +=
+        'Precio Valor Ofrecido: \$${ServicioFirebase.formatearNumeroConPuntos(precioValorOfrecido)}\n';
+    cotizacionTexto +=
+        'Precio Nacional: \$${ServicioFirebase.formatearNumeroConPuntos(precioNacional)}\n';
+    cotizacionTexto +=
+        'Precio Internacional: \$${ServicioFirebase.formatearNumeroConPuntos(precioInternacional)}';
 
     _controladorResultado.text = cotizacionTexto;
   }
 
   // Verifica si todos los formularios obligatorios están completos
   bool _todoFormularioCompleto() {
-    List<String> formulariosObligatorios = _etiquetasFormularios.where((etiqueta) => etiqueta != 'Blogs').toList();
+    List<String> formulariosObligatorios =
+        _etiquetasFormularios.where((etiqueta) => etiqueta != 'Blogs').toList();
 
     if (_opcionesSeleccionadas['SEO'] == 'seo_avanzado') {
       formulariosObligatorios.add('Blogs');
     }
 
     for (String etiqueta in formulariosObligatorios) {
-      if (!_opcionesSeleccionadas.containsKey(etiqueta) || _opcionesSeleccionadas[etiqueta] == null) {
+      if (!_opcionesSeleccionadas.containsKey(etiqueta) ||
+          _opcionesSeleccionadas[etiqueta] == null) {
         return false;
       }
     }
@@ -173,9 +185,11 @@ class _HomeScreenState extends State<HomeScreen> {
         _formularioFinalizado = false;
 
         int indiceBlogs = _etiquetasFormularios.indexOf('Blogs');
-        bool seoAvanzadoSeleccionado = _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
+        bool seoAvanzadoSeleccionado =
+            _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
 
-        if (_indiceFormularioActual == indiceBlogs && !seoAvanzadoSeleccionado) {
+        if (_indiceFormularioActual == indiceBlogs &&
+            !seoAvanzadoSeleccionado) {
           if (_indiceFormularioActual < _etiquetasFormularios.length - 1) {
             _indiceFormularioActual++;
           } else {
@@ -198,7 +212,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     int indiceBlogs = _etiquetasFormularios.indexOf('Blogs');
-    bool seoAvanzadoSeleccionado = _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
+    bool seoAvanzadoSeleccionado =
+        _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
 
     if (indiceActual == indiceBlogs - 1 && !seoAvanzadoSeleccionado) {
       int indiceDestino = indiceBlogs + 1;
@@ -227,13 +242,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _handlePdfGeneration() async {
     // Verifica si las fuentes PDF están listas (cargadas en initState)
     if (!_pdfFontsReady) {
-       ScaffoldMessenger.of(context).showSnackBar(
-         const SnackBar(content: Text('Las fuentes para el PDF aún no están listas. Por favor, espere.')),
-       );
-       // Podrías intentar cargarlas de nuevo o simplemente informar al usuario
-       // await _initializeAsyncDependencies(); // Opcional: Reintentar carga
-       // if (!_pdfFontsReady) return; // Salir si aún no están listas
-       return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text(
+                'Las fuentes para el PDF aún no están listas. Por favor, espere.')),
+      );
+      // Podrías intentar cargarlas de nuevo o simplemente informar al usuario
+      // await _initializeAsyncDependencies(); // Opcional: Reintentar carga
+      // if (!_pdfFontsReady) return; // Salir si aún no están listas
+      return;
     }
 
     // Opcional: Mostrar un indicador de progreso mientras se genera el PDF
@@ -248,7 +265,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // Llama al método del servicio PDF para generar y manejar el archivo
       await _pdfService.generateAndHandlePdf(
-        opcionesSeleccionadas: _opcionesSeleccionadas, // Pasa las opciones actuales
+        opcionesSeleccionadas:
+            _opcionesSeleccionadas, // Pasa las opciones actuales
         // baseFilename: 'cotizacion-mi-empresa', // Opcional: nombre de archivo base personalizado
       );
 
@@ -261,7 +279,6 @@ class _HomeScreenState extends State<HomeScreen> {
           const SnackBar(content: Text('PDF procesado correctamente.')),
         );
       }
-
     } catch (e) {
       // Cierra el diálogo de progreso en caso de error
       if (mounted) Navigator.of(context).pop();
@@ -275,7 +292,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
-
 
   // --- Construcción de la UI ---
 
@@ -362,9 +378,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     totalSteps: _etiquetasFormularios.length,
                     canProceed: _puedeAvanzarAlSiguiente(),
                     isLastVisibleStep: _esUltimoFormularioVisible(),
-                    onBackPressed: _indiceFormularioActual > 0 ? _irAFormularioAnterior : null,
+                    onBackPressed: _indiceFormularioActual > 0
+                        ? _irAFormularioAnterior
+                        : null,
                     onNextPressed: _irAFormularioSiguienteOFinalizar,
                     primaryColor: colorPrimario,
+                    context: context,
                   ),
                 ],
               ),
@@ -386,9 +405,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _formularioFinalizado ? 'Cotización Final' : 'Cotización Parcial',
+                    _formularioFinalizado
+                        ? 'Cotización Final'
+                        : 'Cotización Parcial',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w300, letterSpacing: 1.0, color: Colors.black87),
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: 1.0,
+                        color: Colors.black87),
                   ),
                   Container(
                     height: 1,
@@ -398,11 +421,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: TextField(
                       controller: _controladorResultado,
-                      maxLines: 15,
+                      maxLines: 18,
                       readOnly: true,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontSize: 14),
                       decoration: const InputDecoration(
-                        hintText: 'Seleccione opciones para ver la cotización...',
+                        hintText:
+                            'Seleccione opciones para ver la cotización...',
                         contentPadding: EdgeInsets.all(16),
                         filled: false,
                       ),
@@ -414,11 +441,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_formularioFinalizado && _todoFormularioCompleto())
                     UIComponents.buildFinalActionButtons(
                       onSendQuote: () {/* TODO: Implementar lógica de envío */},
-                      onDownloadQuote: _handlePdfGeneration, // Llama al nuevo manejador
+                      onDownloadQuote:
+                          _handlePdfGeneration, // Llama al nuevo manejador
                       primaryColor: colorPrimario,
                       secondaryColor: colorSecundario,
                       // Habilita el botón de descarga solo si las fuentes están listas
-                      isDownloadEnabled: _pdfFontsReady,
+                      isDownloadEnabled: _pdfFontsReady, context: context,
                     ),
                 ],
               ),
@@ -434,101 +462,133 @@ class _HomeScreenState extends State<HomeScreen> {
     const Color colorPrimario = MyApp.colorPrimario;
     const Color colorSecundario = MyApp.colorSecundario;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        UIComponents.buildProgressIndicator(
-          currentIndex: _indiceFormularioActual,
-          totalSteps: _etiquetasFormularios.length,
-          primaryColor: colorPrimario,
-          secondaryColor: colorSecundario,
-        ),
-        const SizedBox(height: 24),
-        Expanded(
-          flex: 6,
-          child: Container(
+    // Envuelve TODO en un SingleChildScrollView para evitar overflows
+    return SingleChildScrollView(
+        child: Padding(
+      // Puedes ajustar el padding general aquí si es necesario
+      padding: const EdgeInsets.all(0), // Ejemplo de padding general
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize
+            .min, // Hace que la Column principal también se ajuste a su contenido
+        children: [
+          UIComponents.buildProgressIndicator(
+            currentIndex: _indiceFormularioActual,
+            totalSteps: _etiquetasFormularios.length,
+            primaryColor: colorPrimario,
+            secondaryColor: colorSecundario,
+          ),
+          const SizedBox(
+              height: 24), // Espacio entre indicador y primer contenedor
+
+          // --- Sección del Formulario con Altura Dinámica ---
+          Container(
+            // SIN height explícita
+            width: double.infinity, // Ocupa todo el ancho disponible
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(color: Colors.grey.shade300),
+              // Considera añadir borderRadius si quieres esquinas redondeadas
+              // borderRadius: BorderRadius.circular(8.0),
             ),
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(15.0),
             child: Column(
+              mainAxisSize: MainAxisSize
+                  .min, // Clave: La columna interna se ajusta a sus hijos
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildCurrentFormSection(),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                // SIN Expanded aquí. El contenido determina la altura.
+                _buildCurrentFormSection(),
+                const SizedBox(height: 0), // Espacio antes de los botones
                 UIComponents.buildNavigationButtons(
                   currentIndex: _indiceFormularioActual,
                   totalSteps: _etiquetasFormularios.length,
                   canProceed: _puedeAvanzarAlSiguiente(),
                   isLastVisibleStep: _esUltimoFormularioVisible(),
-                  onBackPressed: _indiceFormularioActual > 0 ? _irAFormularioAnterior : null,
+                  onBackPressed: _indiceFormularioActual > 0
+                      ? _irAFormularioAnterior
+                      : null,
                   onNextPressed: _irAFormularioSiguienteOFinalizar,
                   primaryColor: colorPrimario,
+                  context: context,
                 ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Expanded(
-          flex: 4,
-          child: Container(
+          // --- ------------------------------------- ---
+
+          const SizedBox(height: 24), // Espacio entre contenedores
+
+          // --- Sección de Cotización con Altura Dinámica ---
+          Container(
+            // SIN height explícita
+            width: double.infinity, // Ocupa todo el ancho disponible
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(color: Colors.grey.shade300),
+              // borderRadius: BorderRadius.circular(8.0),
             ),
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(15.0),
             child: Column(
+              mainAxisSize: MainAxisSize
+                  .min, // Clave: La columna interna se ajusta a sus hijos
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _formularioFinalizado ? 'Cotización Final' : 'Cotización Parcial',
+                  _formularioFinalizado
+                      ? 'Cotización Final'
+                      : 'Cotización Parcial',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w300, letterSpacing: 1.0, color: Colors.black87),
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: 1.0,
+                      color: Colors.black87),
                 ),
                 Container(
                   height: 1,
                   color: Colors.grey.shade300,
                   margin: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: _controladorResultado,
-                    maxLines: null,
-                    minLines: 5,
-                    readOnly: true,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Seleccione opciones...',
-                      filled: true,
-                      fillColor: Colors.grey.shade50,
-                      contentPadding: const EdgeInsets.all(16),
-                    ),
+                // SIN Expanded aquí. El TextField tomará su altura natural (o la definida por maxLines)
+                TextField(
+                  controller: _controladorResultado,
+                  // maxLines: null, // Permitirá crecer indefinidamente (puede ser mucho)
+                  maxLines:
+                      30, // O un número razonable de líneas visibles inicialmente
+                  minLines: 8, // Mínimo de líneas a mostrar
+                  readOnly: true,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Seleccione opciones para ver la cotización...',
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                    contentPadding: const EdgeInsets.all(16),
+                    border: InputBorder
+                        .none, // Puedes usar OutlineInputBorder si prefieres
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Botones de Acción Final (Enviar/Descargar)
-                // El botón de descarga ahora llama a _handlePdfGeneration
+                // Botones de Acción Final
                 if (_formularioFinalizado && _todoFormularioCompleto())
                   UIComponents.buildFinalActionButtons(
                     onSendQuote: () {/* TODO: Implementar lógica de envío */},
-                    onDownloadQuote: _handlePdfGeneration, // Llama al nuevo manejador
+                    onDownloadQuote: _handlePdfGeneration,
                     primaryColor: colorPrimario,
                     secondaryColor: colorSecundario,
-                     // Habilita el botón de descarga solo si las fuentes están listas
                     isDownloadEnabled: _pdfFontsReady,
+                    context: context,
                   ),
               ],
             ),
           ),
-        ),
-      ],
-    );
+          // --- ------------------------------------ ---
+        ],
+      ),
+    ));
   }
 
   // Construye la sección del formulario correspondiente al índice actual
@@ -548,7 +608,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     String etiquetaActual = _etiquetasFormularios[_indiceFormularioActual];
-    bool esVisibleBlogs = etiquetaActual == 'Blogs' && _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
+    bool esVisibleBlogs = etiquetaActual == 'Blogs' &&
+        _opcionesSeleccionadas['SEO'] == 'seo_avanzado';
 
     switch (etiquetaActual) {
       case 'Creación':
@@ -677,10 +738,10 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
       default: // Caso por defecto si la etiqueta no coincide con ninguna esperada
-        print("Advertencia: Etiqueta de formulario no reconocida: $etiquetaActual");
+        print(
+            "Advertencia: Etiqueta de formulario no reconocida: $etiquetaActual");
         // Devuelve un widget vacío para evitar errores, pero indica que algo inesperado ocurrió.
         return const SizedBox.shrink();
     } // Fin del switch
   } // Fin del método _buildCurrentFormSection
-
 } // Fin de la clase _HomeScreenState

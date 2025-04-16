@@ -6,7 +6,6 @@ import 'firebase_service.dart';
 
 // Clase estática para agrupar los constructores de componentes de UI
 class UIComponents {
-
   // 1. Indicador de Progreso
   static Widget buildProgressIndicator({
     required int currentIndex,
@@ -15,7 +14,8 @@ class UIComponents {
     required Color secondaryColor,
   }) {
     // Asegurarse de que totalSteps no sea 0 para evitar división por cero
-    final double progressValue = totalSteps > 0 ? (currentIndex + 1) / totalSteps : 0;
+    final double progressValue =
+        totalSteps > 0 ? (currentIndex + 1) / totalSteps : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,9 +24,10 @@ class UIComponents {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-               // El título podría venir como parámetro si cambia mucho
+              // El título podría venir como parámetro si cambia mucho
               'Etapa ${currentIndex + 1}: Selección',
-              style: GoogleFonts.poppins( // Usar fuentes del tema si es posible
+              style: GoogleFonts.poppins(
+                  // Usar fuentes del tema si es posible
                   fontSize: 20, // Ajustado ligeramente
                   fontWeight: FontWeight.w400,
                   letterSpacing: 0.8,
@@ -48,7 +49,8 @@ class UIComponents {
           backgroundColor: secondaryColor.withOpacity(0.3), // Fondo más sutil
           color: primaryColor, // Color de la barra de progreso
           minHeight: 4, // Un poco más grueso para visibilidad
-           borderRadius: BorderRadius.circular(2), // Bordes ligeramente redondeados
+          borderRadius:
+              BorderRadius.circular(2), // Bordes ligeramente redondeados
         ),
       ],
     );
@@ -77,27 +79,30 @@ class UIComponents {
         // Título de la sección
         Text(
           etiqueta,
-           style: GoogleFonts.poppins( // Estilo consistente
-               fontSize: 20,
-               fontWeight: FontWeight.w300,
-               color: Colors.black87,
-               letterSpacing: 0.8,
-           ),
+          style: GoogleFonts.poppins(
+            // Estilo consistente
+            fontSize: 20,
+            fontWeight: FontWeight.w300,
+            color: Colors.black87,
+            letterSpacing: 0.8,
+          ),
         ),
         const SizedBox(height: 4),
         // Línea divisoria decorativa
         Container(
           height: 1.5, // Ligeramente más gruesa
-          width: 120,  // Ancho fijo
+          width: 120, // Ancho fijo
           color: secondaryColor, // Usa color secundario
           margin: const EdgeInsets.only(bottom: 20), // Margen inferior
         ),
         // Mapea las descripciones a widgets de Texto
         ...descripciones.map((desc) => Padding(
-              padding: const EdgeInsets.only(bottom: 10), // Espacio entre descripciones
+              padding: const EdgeInsets.only(
+                  bottom: 10), // Espacio entre descripciones
               child: Text(
                 desc,
-                style: GoogleFonts.poppins( // Estilo consistente para cuerpo
+                style: GoogleFonts.poppins(
+                    // Estilo consistente para cuerpo
                     color: Colors.black54, // Un gris más suave
                     fontSize: 15,
                     height: 1.6,
@@ -114,139 +119,208 @@ class UIComponents {
           // Decoración (usa el InputDecorationTheme global, pero puede sobreescribirse)
           decoration: const InputDecoration(
             labelText: 'Seleccione una opción', // Texto de ayuda
-             // Estilos de borde, relleno, etc., heredados del tema en main.dart
-             // Asegúrate de que el tema esté bien configurado
+            // Estilos de borde, relleno, etc., heredados del tema en main.dart
+            // Asegúrate de que el tema esté bien configurado
           ),
-          icon: Icon(Icons.keyboard_arrow_down, color: primaryColor), // Icono del dropdown
+          icon: Icon(Icons.keyboard_arrow_down,
+              color: primaryColor), // Icono del dropdown
           isExpanded: true, // Ocupa todo el ancho disponible
           // Mapea la lista de strings de opciones a DropdownMenuItems
           items: opciones.map((opcion) {
             return DropdownMenuItem<String?>(
               value: opcion, // El valor interno de la opción
               child: Text(
-                 // Formatea el texto de la opción para mostrar (ej: con precio)
-                 // Asume que ServicioFirebase tiene esta función
+                // Formatea el texto de la opción para mostrar (ej: con precio)
+                // Asume que ServicioFirebase tiene esta función
                 ServicioFirebase.formatearOpcionConPrecio(opcion),
-                style: GoogleFonts.poppins( // Estilo para los items del dropdown
+                style: GoogleFonts.poppins(
+                    // Estilo para los items del dropdown
                     fontSize: 15,
                     letterSpacing: 0.3,
                     color: Colors.black87 // Color de texto estándar
-                 ),
+                    ),
               ),
             );
           }).toList(),
         ),
-        const SizedBox(height: 32), // Espacio adicional al final
       ],
     );
   }
 
-  // 3. Botones de Navegación (Anterior/Siguiente/Finalizar)
+  // Define el punto de quiebre (breakpoint)
+  static const double narrowScreenWidthThreshold = 767.0;
+
+  // 3. Botones de Navegación (Anterior/Siguiente/Finalizar) - ¡Ahora recibe context!
   static Widget buildNavigationButtons({
+    required BuildContext context, // <--- Añadido BuildContext
     required int currentIndex,
     required int totalSteps,
     required bool canProceed,
-    required bool isLastVisibleStep, // Indica si es el último paso VISIBLE
-    required VoidCallback? onBackPressed, // Null si no hay botón "Anterior"
+    required bool isLastVisibleStep,
+    required VoidCallback? onBackPressed,
     required VoidCallback onNextPressed,
     required Color primaryColor,
-    // required Color secondaryColor, // No se usa directamente aquí ahora
   }) {
-     final bool isFirstStep = currentIndex == 0;
-    // final bool isTrulyLastStep = currentIndex == totalSteps - 1; // Ya no se usa directamente
+    final bool isFirstStep = currentIndex == 0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isNarrowScreen = screenWidth <= narrowScreenWidthThreshold;
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 24.0), // Espacio sobre los botones
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Alinea botones a los extremos
-        children: [
-          // Botón "Anterior" (visible solo si no es el primer paso)
-          if (!isFirstStep && onBackPressed != null)
-            TextButton.icon(
-              icon: const Icon(Icons.arrow_back, size: 16, color: Colors.white),
-              label: Text(
-                 'Anterior',
-                 style: GoogleFonts.poppins(letterSpacing: 0.5, fontWeight: FontWeight.w400)
-              ),
-              onPressed: onBackPressed, // Llama a la función pasada
-              // Estilo heredado del TextButtonThemeData en main.dart
-            )
-          else
-            // Ocupa espacio para mantener el botón Siguiente a la derecha
-            const SizedBox(width: 80), // Ajusta el ancho según sea necesario
-
-          // Botón "Siguiente" o "Finalizar"
-          ElevatedButton.icon(
-            icon: Icon(
-              isLastVisibleStep ? Icons.check : Icons.arrow_forward, // Cambia icono si es el último
-              size: 16,
-              color: Colors.white,
-            ),
-            label: Text(
-              isLastVisibleStep ? 'Finalizar' : 'Siguiente', // Cambia texto si es el último
-               style: GoogleFonts.poppins(letterSpacing: 0.5, fontWeight: FontWeight.w400)
-            ),
-             // Habilita/deshabilita basado en canProceed
-             // Llama a la función onNextPressed
-            onPressed: canProceed ? onNextPressed : null,
-            style: ElevatedButton.styleFrom(
-               // Estilo heredado del tema, pero podemos especificar el color de deshabilitado
-              disabledBackgroundColor: primaryColor.withOpacity(0.4),
-              disabledForegroundColor: Colors.white.withOpacity(0.7),
-               // El backgroundColor y foregroundColor normales vienen del tema
-            ),
-          ),
-        ],
+    // --- Define la lista de botones ---
+    // Siempre incluimos el botón Siguiente/Finalizar
+    List<Widget> buttons = [
+      ElevatedButton.icon(
+        icon: Icon(
+          isLastVisibleStep ? Icons.check : Icons.arrow_forward,
+          size: 16,
+          color: Colors.white,
+        ),
+        label: Text(isLastVisibleStep ? 'Finalizar' : 'Siguiente',
+            style: GoogleFonts.poppins(
+                letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+        onPressed: canProceed ? onNextPressed : null,
+        style: ElevatedButton.styleFrom(
+          disabledBackgroundColor: primaryColor.withOpacity(0.4),
+          disabledForegroundColor: Colors.white.withOpacity(0.7),
+          // En Column, podríamos querer que se estire
+          minimumSize: isNarrowScreen ? const Size(double.infinity, 40) : null,
+        ),
       ),
+    ];
+
+    // Añadimos el botón Anterior al PRINCIPIO de la lista si es necesario
+    if (!isFirstStep && onBackPressed != null) {
+      buttons.insert(
+          // Inserta al inicio
+          0,
+          TextButton.icon(
+              icon: const Icon(Icons.arrow_back,
+                  size: 16,
+                  color: Colors
+                      .white), // Color blanco para TextButton? Asegúrate que el tema lo soporte o especifica aquí
+              label: Text('Anterior',
+                  style: GoogleFonts.poppins(
+                      letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+              onPressed: onBackPressed,
+              style: TextButton.styleFrom(
+                // En Column, podríamos querer que se estire
+                minimumSize:
+                    isNarrowScreen ? const Size(double.infinity, 40) : null,
+                // Asegúrate que el color del texto sea visible sobre el fondo
+                // foregroundColor: Colors.white, // O el color que defina tu tema para TextButton
+              )));
+    } else if (!isNarrowScreen) {
+      // Si es pantalla ancha y NO hay botón anterior,
+      // insertamos un espacio para empujar el botón Siguiente a la derecha
+      buttons.insert(
+          0, const SizedBox(width: 80)); // Ajusta este ancho si es necesario
+    }
+
+    // --- Construye Row o Column ---
+    return Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: isNarrowScreen
+          ? Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.stretch, // Estira los botones
+              mainAxisSize:
+                  MainAxisSize.min, // Ocupa el mínimo espacio vertical
+              children: buttons.isNotEmpty
+                  ? List.generate(buttons.length * 2 - 1, (index) {
+                      if (index.isEven) {
+                        return buttons[index ~/ 2]; // Botón
+                      } else {
+                        return const SizedBox(
+                            height: 12); // Espacio entre botones en columna
+                      }
+                    })
+                  : [], // Lista vacía si no hay botones
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children:
+                  buttons, // Los botones ya tienen el espaciador (SizedBox) si es necesario
+            ),
     );
   }
 
-  // 4. Botones de Acción Final (Enviar/Descargar)
+  // 4. Botones de Acción Final (Enviar/Descargar) - ¡Ahora recibe context!
   static Widget buildFinalActionButtons({
+    required BuildContext context, // <--- Añadido BuildContext
     required VoidCallback onSendQuote,
     required VoidCallback onDownloadQuote,
     required Color primaryColor,
-    required Color secondaryColor, required bool isDownloadEnabled, // Usado para el botón de enviar
+    required Color secondaryColor,
+    required bool isDownloadEnabled,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24.0), // Espacio sobre los botones
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // O `MainAxisAlignment.end` si prefieres a la derecha
-        children: [
-           // Botón Enviar Cotización
-           ElevatedButton.icon(
-             icon: const Icon(Icons.email_outlined, size: 16), // Icono de email
-             label: Text(
-                'Enviar Cotización',
-                 style: GoogleFonts.poppins(letterSpacing: 0.5, fontWeight: FontWeight.w400)
-             ),
-             onPressed: onSendQuote,
-             style: ElevatedButton.styleFrom(
-                // Usar color secundario para diferenciarlo
-               backgroundColor: secondaryColor,
-               foregroundColor: Colors.white, // Texto blanco sobre color secundario
-               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), // Padding ajustado
-                // Forma heredada del tema
-             ),
-           ),
-           const SizedBox(width: 16), // Espacio entre botones
-           // Botón Descargar Cotización
-           ElevatedButton.icon(
-             icon: const Icon(Icons.download_outlined, size: 16, color: Colors.white), // Icono de descarga
-             label: Text(
-                'Descargar',
-                 style: GoogleFonts.poppins(letterSpacing: 0.5, fontWeight: FontWeight.w400)
-             ),
-             onPressed: onDownloadQuote,
-              style: ElevatedButton.styleFrom(
-                 // Usa el color primario (o el estilo por defecto del tema)
-                 // backgroundColor: primaryColor, // Ya viene del tema
-                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  // Forma heredada del tema
-              ),
-           ),
-         ],
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isNarrowScreen = screenWidth <= narrowScreenWidthThreshold;
+
+    // --- Define la lista de botones ---
+    List<Widget> buttons = [
+      // Botón Enviar Cotización
+      ElevatedButton.icon(
+        icon: const Icon(Icons.email_outlined, size: 16, color: Colors.white,),
+        label: Text('Enviar Cotización',
+            style: GoogleFonts.poppins(
+                letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+        onPressed: isDownloadEnabled
+            ? onSendQuote
+            : null, // Deshabilitar si la descarga no está lista? O manejar independientemente? Asumo que sí.
+        style: ElevatedButton.styleFrom(
+          backgroundColor: secondaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          disabledBackgroundColor: secondaryColor.withOpacity(0.4),
+          disabledForegroundColor: Colors.white.withOpacity(0.7),
+          // En Column, podríamos querer que se estire
+          minimumSize: isNarrowScreen ? const Size(double.infinity, 40) : null,
+        ),
       ),
+      // Botón Descargar Cotización
+      ElevatedButton.icon(
+        icon: const Icon(Icons.download_outlined, size: 16, color: Colors.white,),
+        label: Text('Descargar',
+            style: GoogleFonts.poppins(
+                letterSpacing: 0.5, fontWeight: FontWeight.w400)),
+        onPressed: isDownloadEnabled ? onDownloadQuote : null,
+        style: ElevatedButton.styleFrom(
+          // backgroundColor: primaryColor, // Heredado del tema
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          disabledBackgroundColor:
+              primaryColor.withOpacity(0.4), // Usa el primario deshabilitado
+          disabledForegroundColor: Colors.white.withOpacity(0.7),
+          // En Column, podríamos querer que se estire
+          minimumSize: isNarrowScreen ? const Size(double.infinity, 40) : null,
+        ),
+      ),
+    ];
+
+    // --- Construye Row o Column ---
+    return Padding(
+      padding: const EdgeInsets.only(top: 24.0),
+      child: isNarrowScreen
+          ? Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.stretch, // Estira los botones
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(buttons.length * 2 - 1, (index) {
+                if (index.isEven) {
+                  return buttons[index ~/ 2]; // Botón
+                } else {
+                  return const SizedBox(
+                      height: 12); // Espacio entre botones en columna
+                }
+              }),
+            )
+          : Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.end, // O spaceBetween si prefieres
+              children: [
+                  // Reconstruye la lista para Row con el SizedBox en medio
+                  buttons[0], // Botón Enviar
+                  const SizedBox(width: 16), // Espacio entre botones en Row
+                  buttons[1], // Botón Descargar
+                ]),
     );
   }
 }
