@@ -112,7 +112,7 @@ class UIComponents {
           onChanged: onChanged, // Callback cuando cambia la selección
           dropdownColor: Colors.white, // Fondo del menú desplegable
           // Decoración (usa el InputDecorationTheme global, pero puede sobreescribirse)
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Seleccione una opción', // Texto de ayuda
              // Estilos de borde, relleno, etc., heredados del tema en main.dart
              // Asegúrate de que el tema esté bien configurado
@@ -206,7 +206,7 @@ class UIComponents {
     required VoidCallback onSendQuote,
     required VoidCallback onDownloadQuote,
     required Color primaryColor,
-    required Color secondaryColor, // Usado para el botón de enviar
+    required Color secondaryColor, required bool isDownloadEnabled, // Usado para el botón de enviar
   }) {
     return Padding(
       padding: const EdgeInsets.only(top: 24.0), // Espacio sobre los botones
