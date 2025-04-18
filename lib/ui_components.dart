@@ -243,9 +243,9 @@ class UIComponents {
     );
   }
 
-  // 4. Botones de Acción Final (Enviar/Descargar) - ¡Ahora recibe context!
+  // 4. Botones de Acción Final (Enviar/Descargar) 
   static Widget buildFinalActionButtons({
-    required BuildContext context, // <--- Añadido BuildContext
+    required BuildContext context, 
     required VoidCallback onSendQuote,
     required VoidCallback onDownloadQuote,
     required Color primaryColor,
@@ -298,8 +298,7 @@ class UIComponents {
     // --- Construye Row o Column ---
     return Padding(
       padding: const EdgeInsets.only(top: 24.0),
-      child: isNarrowScreen
-          ? Column(
+      child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.stretch, // Estira los botones
               mainAxisSize: MainAxisSize.min,
@@ -312,15 +311,15 @@ class UIComponents {
                 }
               }),
             )
-          : Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.end, // O spaceBetween si prefieres
-              children: [
-                  // Reconstruye la lista para Row con el SizedBox en medio
-                  buttons[0], // Botón Enviar
-                  const SizedBox(width: 16), // Espacio entre botones en Row
-                  buttons[1], // Botón Descargar
-                ]),
+          // : Row(
+          //     mainAxisAlignment:
+          //         MainAxisAlignment.end, // O spaceBetween si prefieres
+          //     children: [
+          //         // Reconstruye la lista para Row con el SizedBox en medio
+          //         buttons[0], // Botón Enviar
+          //         const SizedBox(width: 16), // Espacio entre botones en Row
+          //         buttons[1], // Botón Descargar
+          //       ]),
     );
   }
 
