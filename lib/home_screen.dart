@@ -15,6 +15,7 @@ import 'main.dart'; // Para acceder a MyApp.colorPrimario, etc.
 import 'pdf_service.dart';
 import 'confirmation_screen.dart'; // Importa la nueva pantalla
 import 'package:url_launcher/url_launcher.dart';
+import 'login_screen.dart'; // <-- Importa la pantalla de login
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -331,6 +332,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline), // Icono de persona
+            tooltip: 'Acceso Admin', // Texto de ayuda al mantener presionado
+            onPressed: () {
+              // Navega a la pantalla de Login
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+            color: Colors.white, // Asegura que el icono sea visible
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),

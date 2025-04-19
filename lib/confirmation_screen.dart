@@ -79,7 +79,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   }
 
   // --- Lógica de Envío (Simulada con mailto:) ---
-  Future<void> _enviarCorreo(String destinatario, String asunto, String cuerpo) async {
+  Future<void> _enviarCorreo(
+      String destinatario, String asunto, String cuerpo) async {
     setState(() => _isSending = true);
 
     final Uri emailLaunchUri = Uri(
@@ -111,7 +112,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     } finally {
       // Asegurarse de que el estado se revierta incluso si hay errores
       if (mounted) {
-         setState(() => _isSending = false);
+        setState(() => _isSending = false);
       }
     }
   }
@@ -133,7 +134,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     cuerpo += 'Teléfono: $telefono\n';
     cuerpo += 'Correo: $correo\n\n';
     cuerpo += '--- Resumen Cotización Generada ---\n';
-    cuerpo += '${widget.cotizacionTextoResumen}\n'; // Usa el texto ya formateado
+    cuerpo +=
+        '${widget.cotizacionTextoResumen}\n'; // Usa el texto ya formateado
     cuerpo += '----------------------------------\n\n';
 
     return cuerpo;
@@ -145,27 +147,75 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       String correoUsuario = _correoController.text.trim();
       String asunto = 'Cotización Web Generada en Ando Devs';
       String cuerpo = _prepararCuerpoCorreo();
-      cuerpo += 'Gracias por usar nuestro cotizador, esperamos que nos elijas.\n';
+      cuerpo +=
+          'Gracias por usar nuestro cotizador, esperamos que nos elijas.\n';
 
       _enviarCorreo(correoUsuario, asunto, cuerpo);
     }
   }
 
-  // Acción: Enviar cotización a la empresa y solicitar reunión
-  void _enviarCorreoAEmpresa() {
-     if (_formKey.currentState!.validate()) {
-      String correoEmpresa = 'ando.devs@gmail.com'; // Correo fijo
-      String nombreUsuario = _nombreController.text.trim();
-      String asunto = 'Solicitud de Reunión - Cotización Web de $nombreUsuario';
-      String cuerpo = _prepararCuerpoCorreo();
-      cuerpo += 'Por favor, contactarme para agendar una reunión y discutir los detalles.\n\n';
-      cuerpo += 'Saludos,\n$nombreUsuario';
+  // --- ACCIÓN MODIFICADA: Guardar cotización en Firebase ---
+  Future<void> _guardarCotizacionYNotificar() async {
+    // 1. Validar el formulario
+    if (!_formKey.currentState!.validate()) {
+      return; // No hacer nada si el formulario no es válido
+    }
 
-      _enviarCorreo(correoEmpresa, asunto, cuerpo);
+    // 2. Mostrar indicador de carga
+    setState(() => _isSending = true);
+
+    // 3. Recoger los datos
+    String nombre = _nombreController.text.trim();
+    String nombreWeb = _nombreWebController.text.trim();
+    String telefono = _telefonoController.text.trim();
+    String correo = _correoController.text.trim();
+    String resumen = widget.cotizacionTextoResumen;
+
+    try {
+      // 4. Llamar al servicio de Firebase para guardar
+      await ServicioFirebase.guardarCotizacion(
+        nombre: nombre,
+        nombreWeb:
+            nombreWeb.isNotEmpty ? nombreWeb : null, // Pasa null si está vacío
+        telefono: telefono,
+        correo: correo,
+        resumenCotizacion: resumen,
+      );
+
+      // 5. Mostrar mensaje de éxito (si el widget sigue montado)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text('¡Cotización enviada! Nos pondremos en contacto pronto.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Opcional: Navegar a otra pantalla o limpiar el formulario
+        // Navigator.pop(context); // Volver a la pantalla anterior
+        // _formKey.currentState?.reset();
+        // _nombreController.clear(); ... etc.
+      }
+    } catch (e) {
+      // 6. Mostrar mensaje de error (si el widget sigue montado)
+      print('Error en UI al guardar cotización: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar la cotización: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      // 7. Ocultar indicador de carga (si el widget sigue montado)
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
- // --- Manejador para la Generación/Descarga/Compartir PDF ---
+  // --- Manejador para la Generación/Descarga/Compartir PDF ---
   Future<void> _handlePdfGeneration() async {
     // Verifica si las fuentes PDF están listas
     if (!widget.pdfFontsReady) {
@@ -190,7 +240,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       // Llama al método del servicio PDF pasado desde HomeScreen
       await widget.pdfService.generateAndHandlePdf(
         opcionesSeleccionadas: widget.opcionesSeleccionadas,
-         // Puedes añadir datos del cliente al PDF si modificas PdfService
+        // Puedes añadir datos del cliente al PDF si modificas PdfService
         // datosCliente: {
         //   'nombre': _nombreController.text.trim(),
         //   'telefono': _telefonoController.text.trim(),
@@ -218,7 +268,6 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     const Color colorPrimario = MyApp.colorPrimario;
@@ -228,12 +277,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-         // Añadir botón de retroceso si se desea
+        // Añadir botón de retroceso si se desea
         // leading: IconButton(
         //   icon: Icon(Icons.arrow_back, color: Colors.white),
         //   onPressed: () => Navigator.of(context).pop(),
         // ),
-        title: Stack( // Mismo estilo de título que HomeScreen
+        title: Stack(
+          // Mismo estilo de título que HomeScreen
           alignment: Alignment.center,
           children: [
             Text(
@@ -260,13 +310,17 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
           ],
         ),
         backgroundColor: colorPrimario, // Color de fondo del AppBar
-        iconTheme: const IconThemeData(color: Colors.white), // Color íconos AppBar
+        iconTheme:
+            const IconThemeData(color: Colors.white), // Color íconos AppBar
       ),
-      body: SingleChildScrollView( // Permite scroll si el contenido es largo
+      body: SingleChildScrollView(
+        // Permite scroll si el contenido es largo
         child: Padding(
           padding: const EdgeInsets.all(15.0),
-          child: Center( // Centra el contenido si el ancho lo permite
-            child: ConstrainedBox( // Limita el ancho máximo en pantallas grandes
+          child: Center(
+            // Centra el contenido si el ancho lo permite
+            child: ConstrainedBox(
+              // Limita el ancho máximo en pantallas grandes
               constraints: const BoxConstraints(maxWidth: 600),
               child: Form(
                 key: _formKey,
@@ -275,10 +329,11 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                   children: [
                     Text(
                       'Ingresa tus Datos',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w300,
-                            color: Colors.black87,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w300,
+                                color: Colors.black87,
+                              ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
@@ -302,7 +357,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       decoration: UIComponents.getInputDecoration(
                         labelText: 'Nombre deseado para tu Web (Opcional)',
                         hintText: 'Ej: mi-tienda-online',
-                         primaryColor: colorPrimario,
+                        primaryColor: colorPrimario,
                       ),
                       // Sin validador, es opcional
                     ),
@@ -337,14 +392,13 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                     // --- Botones de Acción ---
                     Text(
                       'Acciones Finales',
-                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w300,
-                            color: Colors.black87,
-                            letterSpacing: 0.8
-                          ),
-                       textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w300,
+                          color: Colors.black87,
+                          letterSpacing: 0.8),
+                      textAlign: TextAlign.center,
                     ),
-                     Container(
+                    Container(
                       height: 1,
                       color: Colors.grey.shade300,
                       margin: const EdgeInsets.symmetric(vertical: 14),
@@ -353,9 +407,15 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                     // Botón Enviar Copia al Correo del Usuario
                     ElevatedButton.icon(
                       icon: _isSending
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.email_outlined, color: Colors.white),
-                      label: Text('Enviarme Copia de la Cotización', style: GoogleFonts.poppins(color: Colors.white)),
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.email_outlined,
+                              color: Colors.white),
+                      label: Text('Enviarme Copia de la Cotización',
+                          style: GoogleFonts.poppins(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorSecundario,
                         padding: const EdgeInsets.symmetric(vertical: 15),
@@ -367,47 +427,63 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Botón Enviar a Empresa y Solicitar Reunión
+                    // --- BOTÓN MODIFICADO: Enviar a Firebase ---
                     ElevatedButton.icon(
-                       icon: _isSending
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.send_outlined, color: Colors.white),
-                      label: Text('Enviar y Solicitar Reunión', style: GoogleFonts.poppins(color: Colors.white)),
+                      icon: _isSending
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.cloud_upload_outlined,
+                              color: Colors.white), // Icono cambiado
+                      label: Text('Enviar y Solicitar Reunión',
+                          style: GoogleFonts.poppins(
+                              color: Colors.white)), // Mismo texto
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: colorPrimario,
+                        backgroundColor: colorPrimario, // Mismo color
                         padding: const EdgeInsets.symmetric(vertical: 15),
-                         shape: RoundedRectangleBorder(
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: _isSending ? null : _enviarCorreoAEmpresa,
+                      // Llama a la nueva función asíncrona para guardar en Firebase
+                      onPressed:
+                          _isSending ? null : _guardarCotizacionYNotificar,
                     ),
                     const SizedBox(height: 18),
 
                     // Botón Descargar PDF (reutilizando la lógica)
-                     ElevatedButton.icon(
-                      icon: const Icon(Icons.picture_as_pdf_outlined, color: colorPrimario),
-                      label: Text('Descargar Cotización en PDF', style: GoogleFonts.poppins(color: colorPrimario)),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.picture_as_pdf_outlined,
+                          color: colorPrimario),
+                      label: Text('Descargar Cotización en PDF',
+                          style: GoogleFonts.poppins(color: colorPrimario)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white, // Fondo blanco
-                        side: const BorderSide(color: colorPrimario, width: 1.5), // Borde primario
+                        side: const BorderSide(
+                            color: colorPrimario, width: 1.5), // Borde primario
                         padding: const EdgeInsets.symmetric(vertical: 15),
-                         shape: RoundedRectangleBorder(
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                       // Deshabilita si las fuentes no están listas o si ya está enviando
-                      onPressed: widget.pdfFontsReady && !_isSending ? _handlePdfGeneration : null,
+                      onPressed: widget.pdfFontsReady && !_isSending
+                          ? _handlePdfGeneration
+                          : null,
                     ),
-                     if (!widget.pdfFontsReady) // Muestra advertencia si las fuentes no están listas
-                       Padding(
-                         padding: const EdgeInsets.only(top: 8.0),
-                         child: Text(
-                           'La descarga PDF estará disponible en breve...',
-                           textAlign: TextAlign.center,
-                           style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                         ),
-                       ),
+                    if (!widget
+                        .pdfFontsReady) // Muestra advertencia si las fuentes no están listas
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'La descarga PDF estará disponible en breve...',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      ),
                   ],
                 ),
               ),
