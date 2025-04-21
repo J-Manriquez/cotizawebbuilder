@@ -71,7 +71,13 @@ class UIComponents {
     if (!visible) {
       return const SizedBox.shrink();
     }
-
+    // Define el estilo base para las descripciones para reutilizarlo
+    final baseDescriptionStyle = GoogleFonts.poppins(
+      color: Colors.black54, // Un gris más suave
+      fontSize: 15,
+      height: 1.6,
+      letterSpacing: 0.3,
+    );
     // El widget principal que se mostrará si es visible
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,11 +87,16 @@ class UIComponents {
           etiqueta,
           style: GoogleFonts.poppins(
             // Estilo consistente
-            fontSize: 20,
-            fontWeight: FontWeight.w300,
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
             color: Colors.black87,
-            letterSpacing: 0.8,
+            letterSpacing: 1.0,
           ),
+          // style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          //               fontWeight: FontWeight.w300,
+          //               letterSpacing: 1.0,
+          //               color: Colors.black87),
+          //         ,
         ),
         const SizedBox(height: 4),
         // Línea divisoria decorativa
@@ -96,19 +107,60 @@ class UIComponents {
           margin: const EdgeInsets.only(bottom: 20), // Margen inferior
         ),
         // Mapea las descripciones a widgets de Texto
-        ...descripciones.map((desc) => Padding(
-              padding: const EdgeInsets.only(
-                  bottom: 10), // Espacio entre descripciones
-              child: Text(
-                desc,
-                style: GoogleFonts.poppins(
-                    // Estilo consistente para cuerpo
-                    color: Colors.black54, // Un gris más suave
-                    fontSize: 15,
-                    height: 1.6,
-                    letterSpacing: 0.3),
+        ...descripciones.map((desc) {
+          Widget textWidget; // Widget que contendrá el texto formateado
+
+          // Condición para el texto en itálica (ajusta si es necesario)
+          if (desc.startsWith('Para crear la página web que necesitas')) {
+            textWidget = Text(
+              desc,
+              style: baseDescriptionStyle.copyWith(
+                fontStyle: FontStyle.italic, // Aplica itálica
               ),
-            )),
+            );
+          }
+          // Condición para textos con título en negrita
+          else if (desc.contains(':')) {
+            final colonIndex = desc.indexOf(':'); // Encuentra el primer ':'
+            if (colonIndex != -1) {
+              final titlePart =
+                  desc.substring(0, colonIndex + 1); // Incluye ':'
+              final bodyPart =
+                  desc.substring(colonIndex + 1); // Texto después de ':'
+
+              textWidget = RichText(
+                text: TextSpan(
+                  style:
+                      baseDescriptionStyle, // Estilo por defecto para todo el RichText
+                  children: <TextSpan>[
+                    TextSpan(
+                      text: titlePart,
+                      // Aplica negrita solo a esta parte
+                      style: baseDescriptionStyle.copyWith(
+                          fontWeight: FontWeight.bold),
+                    ),
+                    // Esta parte hereda el baseDescriptionStyle sin negrita
+                    TextSpan(text: bodyPart),
+                  ],
+                ),
+              );
+            } else {
+              // Si por alguna razón falla la búsqueda del ':', muestra normal
+              textWidget = Text(desc, style: baseDescriptionStyle);
+            }
+          }
+          // Caso por defecto: Texto normal sin formato especial
+          else {
+            textWidget = Text(desc, style: baseDescriptionStyle);
+          }
+
+          // Devuelve el widget de texto (Text o RichText) con su padding
+          return Padding(
+            padding: const EdgeInsets.only(
+                bottom: 10), // Espacio entre descripciones
+            child: textWidget,
+          );
+        }),
         const SizedBox(height: 24), // Espacio antes del Dropdown
 
         // Dropdown para seleccionar la opción
@@ -131,11 +183,11 @@ class UIComponents {
               value: opcion, // El valor interno de la opción
               child: Text(
                 // Formatea el texto de la opción para mostrar (ej: con precio)
-                // Asume que ServicioFirebase tiene esta función
                 ServicioFirebase.formatearOpcionConPrecio(opcion),
                 style: GoogleFonts.poppins(
                     // Estilo para los items del dropdown
                     fontSize: 15,
+                    fontWeight: FontWeight.w500,
                     letterSpacing: 0.3,
                     color: Colors.black87 // Color de texto estándar
                     ),
@@ -243,9 +295,9 @@ class UIComponents {
     );
   }
 
-  // 4. Botones de Acción Final (Enviar/Descargar) 
+  // 4. Botones de Acción Final (Enviar/Descargar)
   static Widget buildFinalActionButtons({
-    required BuildContext context, 
+    required BuildContext context,
     required VoidCallback onSendQuote,
     required VoidCallback onDownloadQuote,
     required Color primaryColor,
@@ -259,7 +311,11 @@ class UIComponents {
     List<Widget> buttons = [
       // Botón Enviar Cotización
       ElevatedButton.icon(
-        icon: const Icon(Icons.email_outlined, size: 16, color: Colors.white,),
+        icon: const Icon(
+          Icons.email_outlined,
+          size: 16,
+          color: Colors.white,
+        ),
         label: Text('Enviar Cotización',
             style: GoogleFonts.poppins(
                 letterSpacing: 0.5, fontWeight: FontWeight.w400)),
@@ -278,7 +334,11 @@ class UIComponents {
       ),
       // Botón Descargar Cotización
       ElevatedButton.icon(
-        icon: const Icon(Icons.download_outlined, size: 16, color: Colors.white,),
+        icon: const Icon(
+          Icons.download_outlined,
+          size: 16,
+          color: Colors.white,
+        ),
         label: Text('Descargar',
             style: GoogleFonts.poppins(
                 letterSpacing: 0.5, fontWeight: FontWeight.w400)),
@@ -297,36 +357,34 @@ class UIComponents {
 
     // --- Construye Row o Column ---
     return Padding(
-      padding: const EdgeInsets.only(top: 24.0),
-      child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.stretch, // Estira los botones
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(buttons.length * 2 - 1, (index) {
-                if (index.isEven) {
-                  return buttons[index ~/ 2]; // Botón
-                } else {
-                  return const SizedBox(
-                      height: 12); // Espacio entre botones en columna
-                }
-              }),
-            )
-          // : Row(
-          //     mainAxisAlignment:
-          //         MainAxisAlignment.end, // O spaceBetween si prefieres
-          //     children: [
-          //         // Reconstruye la lista para Row con el SizedBox en medio
-          //         buttons[0], // Botón Enviar
-          //         const SizedBox(width: 16), // Espacio entre botones en Row
-          //         buttons[1], // Botón Descargar
-          //       ]),
-    );
+        padding: const EdgeInsets.only(top: 24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch, // Estira los botones
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(buttons.length * 2 - 1, (index) {
+            if (index.isEven) {
+              return buttons[index ~/ 2]; // Botón
+            } else {
+              return const SizedBox(
+                  height: 12); // Espacio entre botones en columna
+            }
+          }),
+        )
+        // : Row(
+        //     mainAxisAlignment:
+        //         MainAxisAlignment.end, // O spaceBetween si prefieres
+        //     children: [
+        //         // Reconstruye la lista para Row con el SizedBox en medio
+        //         buttons[0], // Botón Enviar
+        //         const SizedBox(width: 16), // Espacio entre botones en Row
+        //         buttons[1], // Botón Descargar
+        //       ]),
+        );
   }
 
-  
 // Helper para InputDecoration (puedes moverlo a UIComponents si prefieres)
 
-   static InputDecoration getInputDecoration({
+  static InputDecoration getInputDecoration({
     required String labelText,
     required String hintText,
     required Color primaryColor,
@@ -335,7 +393,9 @@ class UIComponents {
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
-      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: primaryColor.withOpacity(0.7)) : null,
+      prefixIcon: prefixIcon != null
+          ? Icon(prefixIcon, color: primaryColor.withOpacity(0.7))
+          : null,
       filled: true,
       fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(
@@ -358,10 +418,8 @@ class UIComponents {
         borderRadius: BorderRadius.circular(8.0),
         borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 12.0),
+      contentPadding:
+          const EdgeInsets.symmetric(vertical: 15.0, horizontal: 12.0),
     );
   }
 }
-
-
-

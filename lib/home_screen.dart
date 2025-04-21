@@ -534,8 +534,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   _formularioFinalizado
                       ? 'Cotización Final'
                       : 'Cotización Parcial',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w300,
+                  style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: 1.0,
                       color: Colors.black87),
                 ),
@@ -668,9 +669,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return UIComponents.buildDropdownSection(
           etiqueta: 'Creación',
           descripciones: const [
-            'Adaptación de plantilla: Uso y ajuste de una plantilla preexistente.',
-            'Personalización de plantilla: Modificación de una plantilla existente.',
-            'Creación personalizada: Diseño y desarrollo a medida.',
+            'Para crear la página web que necesitas, te ofrecemos tres opciones diseñadas para ajustarse a diferentes niveles de personalización.',
+            'Adaptación de plantilla: Tomamos una plantilla preexistente y la transformamos para reflejar tu esencia. Modificamos colores, tipografía y contenido como imágenes o textos, ajustándola a lo que necesitas sin complicaciones.',
+            'Personalización de plantilla: Si buscas algo más personalizado, partimos de una plantilla existente y añadimos los elementos que necesitas. Creamos algo único que se adapte completamente a tus expectativas.',
+            'Creación personalizada: Aquí es donde lo hacemos todo a tu medida. Diseñamos y desarrollamos desde cero siguiendo al pie de la letra tus instrucciones de diseño o basándonos en cualquier guía o manual que nos proporciones.',
           ],
           opciones: const [
             'adaptacion_plantilla',
@@ -723,9 +725,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return UIComponents.buildDropdownSection(
           etiqueta: 'Mantenimiento Web Mensual',
           descripciones: const [
-            'Básico: Soporte esencial y actualizaciones.',
-            'Estándar: Soporte ampliado y actualizaciones frecuentes.',
-            'Avanzado: Soporte prioritario, act. regulares, 1 blog/mes incluido.',
+            'Básico: Soporte esencial y actualizaciones, por un periodo de dos meses una vez entregada la web.',
+            'Estándar: Soporte ampliado y actualizaciones frecuentes, por un periodo de seis meses una vez entregada la web.',
+            'Avanzado: Soporte prioritario, actualizaciones regulares, por un periodo de un año una vez entregada la web.',
             'Sin Mantenimiento: El cliente gestiona el mantenimiento.',
           ],
           opciones: const [
