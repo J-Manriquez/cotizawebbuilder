@@ -25,7 +25,7 @@ class UIComponents {
           children: [
             Text(
               // El título podría venir como parámetro si cambia mucho
-              'Etapa ${currentIndex + 1}: Selección',
+              'Selección Etapa ${currentIndex + 1}: ',
               style: GoogleFonts.poppins(
                   // Usar fuentes del tema si es posible
                   fontSize: 20, // Ajustado ligeramente

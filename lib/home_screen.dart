@@ -515,44 +515,6 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(
               height: 24), // Espacio entre indicador y primer contenedor
 
-          // --- Sección del Formulario con Altura Dinámica ---
-          Container(
-            // SIN height explícita
-            width: double.infinity, // Ocupa todo el ancho disponible
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade300),
-              // Considera añadir borderRadius si quieres esquinas redondeadas
-              // borderRadius: BorderRadius.circular(8.0),
-            ),
-            padding: const EdgeInsets.all(15.0),
-            child: Column(
-              mainAxisSize: MainAxisSize
-                  .min, // Clave: La columna interna se ajusta a sus hijos
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // SIN Expanded aquí. El contenido determina la altura.
-                _buildCurrentFormSection(),
-                const SizedBox(height: 0), // Espacio antes de los botones
-                UIComponents.buildNavigationButtons(
-                  currentIndex: _indiceFormularioActual,
-                  totalSteps: _etiquetasFormularios.length,
-                  canProceed: _puedeAvanzarAlSiguiente(),
-                  isLastVisibleStep: _esUltimoFormularioVisible(),
-                  onBackPressed: _indiceFormularioActual > 0
-                      ? _irAFormularioAnterior
-                      : null,
-                  onNextPressed: _irAFormularioSiguienteOFinalizar,
-                  primaryColor: colorPrimario,
-                  context: context,
-                ),
-              ],
-            ),
-          ),
-          // --- ------------------------------------- ---
-
-          const SizedBox(height: 24), // Espacio entre contenedores
-
           // --- Sección de Cotización con Altura Dinámica ---
           Container(
             // SIN height explícita
@@ -588,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // maxLines: null, // Permitirá crecer indefinidamente (puede ser mucho)
                   maxLines:
                       30, // O un número razonable de líneas visibles inicialmente
-                  minLines: 8, // Mínimo de líneas a mostrar
+                  minLines: 1, // Mínimo de líneas a mostrar
                   readOnly: true,
                   style: Theme.of(context)
                       .textTheme
@@ -634,6 +596,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     secondaryColor: colorSecundario,
                     isDownloadEnabled: _pdfFontsReady,
                   ),
+              ],
+            ),
+          ),
+          // --- ------------------------------------- ---
+
+          const SizedBox(height: 24), // Espacio entre contenedores
+
+          // --- Sección del Formulario con Altura Dinámica ---
+          Container(
+            // SIN height explícita
+            width: double.infinity, // Ocupa todo el ancho disponible
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              // Considera añadir borderRadius si quieres esquinas redondeadas
+              // borderRadius: BorderRadius.circular(8.0),
+            ),
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              mainAxisSize: MainAxisSize
+                  .min, // Clave: La columna interna se ajusta a sus hijos
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // SIN Expanded aquí. El contenido determina la altura.
+                _buildCurrentFormSection(),
+                const SizedBox(height: 0), // Espacio antes de los botones
+                UIComponents.buildNavigationButtons(
+                  currentIndex: _indiceFormularioActual,
+                  totalSteps: _etiquetasFormularios.length,
+                  canProceed: _puedeAvanzarAlSiguiente(),
+                  isLastVisibleStep: _esUltimoFormularioVisible(),
+                  onBackPressed: _indiceFormularioActual > 0
+                      ? _irAFormularioAnterior
+                      : null,
+                  onNextPressed: _irAFormularioSiguienteOFinalizar,
+                  primaryColor: colorPrimario,
+                  context: context,
+                ),
               ],
             ),
           ),
