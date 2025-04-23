@@ -115,7 +115,7 @@ class ServicioFirebase {
     } catch (e) {
       print('Error al obtener stream de cotizaciones: $e');
       // Devuelve un stream vacío o maneja el error como prefieras
-      return Stream.empty();
+      return const Stream.empty();
     }
   }
 

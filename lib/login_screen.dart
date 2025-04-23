@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.lock_outline,
                     size: 80,
                     color: MyApp.colorSecundario, // Usa tus colores
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           )
                         : const Icon(Icons.login, color: Colors.white),
-                    label: Text('Entrar', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    label: const Text('Entrar', style: TextStyle(fontSize: 16, color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: MyApp.colorPrimario, // Usa tus colores
                       padding: const EdgeInsets.symmetric(vertical: 15),

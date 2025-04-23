@@ -38,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Blogs', // Se manejará la lógica de visibilidad
     'Mantenimiento',
     'Productos',
+    // 'Servicios',
     'Dominio',
     'Hosting'
   ];
@@ -688,9 +689,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return UIComponents.buildDropdownSection(
           etiqueta: 'Optimización SEO',
           descripciones: const [
-            'SEO Básico: Optimización esencial para motores de búsqueda.',
-            'SEO Avanzado: Optimización completa, incluye estrategia de contenidos (blogs).',
-            'Sin SEO: No se aplicará optimización específica.',
+            'SEO o Search Engine Optimization, por sus siglas en inglés, es el conjunto de prácticas y estrategias diseñadas para mejorar la visibilidad de su sitio web en los motores de búsqueda como Google. El objetivo principal del SEO es atraer más clientes a su sitio y lograr que se posicione en los primeros resultados de búsqueda.',
+            'SEO Básico: Incluye una optimización esencial para motores de búsqueda, asegurando que los aspectos fundamentales de tu sitio, como palabras clave, títulos y meta descripciones, estén correctamente configurados.',
+            'SEO Avanzado: Va un paso más allá, incorporando una estrategia de contenidos que incluye la creación de blogs y materiales adicionales para mejorar el posicionamiento.',
+            'Sin SEO: Se aplica el contenido segun lo acordado previamente, sin optimizacion.',
           ],
           opciones: const [
             'seo_basico',
@@ -706,7 +708,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return UIComponents.buildDropdownSection(
           etiqueta: 'Gestión de Blogs',
           descripciones: const [
-            'Número de entradas de blog a crear por mes (requiere SEO Avanzado).',
+            'Un blog es una herramienta para compartir contenido en internet a través de artículos. Sirve para atraer más visitantes a tu página web, mejorar su visibilidad en buscadores como Google y generar interés en tus productos o servicios. Cada entrada incluye textos relevantes y atractivos, diseñados para conectarse con los intereses de tu público.',
+            'Seleccione número de entradas de blog a crear.',
           ],
           opciones: const [
             '0_blogs',
@@ -725,10 +728,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return UIComponents.buildDropdownSection(
           etiqueta: 'Mantenimiento Web Mensual',
           descripciones: const [
-            'Básico: Soporte esencial y actualizaciones, por un periodo de dos meses una vez entregada la web.',
-            'Estándar: Soporte ampliado y actualizaciones frecuentes, por un periodo de seis meses una vez entregada la web.',
-            'Avanzado: Soporte prioritario, actualizaciones regulares, por un periodo de un año una vez entregada la web.',
-            'Sin Mantenimiento: El cliente gestiona el mantenimiento.',
+            'El servicio de soporte está diseñado para asegurar que tu página web funcione correctamente después de su entrega y se mantenga actualizada.',
+            'Básico: Incluye soporte esencial para resolver problemas menores y garantizar el funcionamiento de su web. También se realizan actualizaciones puntuales durante un periodo de dos meses tras la entrega de la web.',
+            'Estándar: Ofrece soporte ampliado con atención a incidencias y actualizaciones regulares para mantener la web en óptimas condiciones, Ademas permite realizar modificaciones menores a los estilos y contenido. El servicio cubre un periodo de seis meses tras la entrega de la web.',
+            'Avanzado: Este nivel incluye soporte prioritario, donde tus solicitudes serán atendidas con mayor rapidez. También se realizarán actualizaciones programadas, modificaciones de estilo, contenido y estructura junto con mantenimiento continuo durante un año completo tras la entrega de la web.',
+            'Sin Mantenimiento: En este caso, el cliente asume la responsabilidad total del mantenimiento y gestión de su página web, sin servicios de soporte adicionales una vez entregada la web',
           ],
           opciones: const [
             'mantenimiento_basico',
@@ -743,11 +747,13 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       case 'Productos':
         return UIComponents.buildDropdownSection(
-          etiqueta: 'Límite de Productos (e-commerce)',
+          etiqueta: 'Cantidad de Productos',
           descripciones: const [
-            'Número máximo de productos para tiendas online.',
+            'Número máximo de productos para ofrecer en su tienda online.',
+            'Seleccione número de productos a ofrecer.',
           ],
           opciones: const [
+            'sin_productos',
             'limite_25_productos',
             'limite_50_productos',
             'limite_100_productos',
@@ -760,11 +766,31 @@ class _HomeScreenState extends State<HomeScreen> {
           primaryColor: MyApp.colorPrimario,
           secondaryColor: MyApp.colorSecundario,
         );
+      // case 'Servicios':
+      //   return UIComponents.buildDropdownSection(
+      //     etiqueta: 'Cantidad de Servicios',
+      //     descripciones: const [
+      //       'Número máximo de servicios para ofrecer en su tienda online.',
+      //       'Seleccione número de servicios a ofrecer.',
+      //     ],
+      //     opciones: const [
+      //       'sin_servicios',
+      //       'limite_2_servicios',
+      //       'limite_5_servicios',
+      //       'ilimitado_servicios',
+      //     ],
+      //     valorSeleccionado: _opcionesSeleccionadas[etiquetaActual],
+      //     onChanged: (valor) => _onDropdownChanged(etiquetaActual, valor),
+      //     primaryColor: MyApp.colorPrimario,
+      //     secondaryColor: MyApp.colorSecundario,
+      //   );
       case 'Dominio':
         return UIComponents.buildDropdownSection(
           etiqueta: 'Gestión de Dominio',
           descripciones: const [
-            '¿Necesitas registrar o transferir un dominio?',
+            'El dominio es el nombre único y exclusivo que identifica tu página web en Internet, como "tuempresa.com".',
+            'Con dominio: Incluye el registro de un nombre de dominio personalizado para tu página web, gestionado y configurado por nosotros. Esto asegura que tu web esté lista para funcionar con un nombre que represente a tu marca o negocio.'
+            'Sin dominio: No se realiza el registro de un nombre de dominio. En este caso, el cliente deberá gestionar o transferir ademas de configurar el dominio de forma independiente.'
           ],
           opciones: const [
             'dominio_previo', // El cliente ya tiene dominio
@@ -779,7 +805,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return UIComponents.buildDropdownSection(
           etiqueta: 'Alojamiento Web (Hosting)',
           descripciones: const [
-            '¿Necesitas servicio de alojamiento para tu web?',
+            'Este servicio permite almacenar su página web en servidores para que esté accesible en internet y asi puede ser visitado por usuarios en todo el mundo.',
+            'Con hosting: Incluye el servicio de alojamiento en servidores confiables, configurado y gestionado por nosotros.'
+            'Sin hosting: No se proporciona servicio de alojamiento. En este caso, el cliente deberá encargarse de contratar y configurar un hosting para publicar la página web que crearemos.'
           ],
           opciones: const [
             'hosting_previo', // El cliente ya tiene hosting

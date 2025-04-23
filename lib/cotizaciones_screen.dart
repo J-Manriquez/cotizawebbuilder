@@ -159,7 +159,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
   }
 
   Future<void> _enviarCorreo(String correo, String nombreCliente) async {
-    final String asunto = 'Contacto por Cotización - AndoDevs';
+    const String asunto = 'Contacto por Cotización - AndoDevs';
     final String cuerpo =
         'Hola $nombreCliente,\n\nHablo desde AndoDevs. Recibimos una cotización de su parte y nos gustaría conversar sobre los detalles.\n\n¿Cuándo tendría disponibilidad para una breve llamada o reunión?\n\nSaludos,\nEl equipo de AndoDevs.';
 
@@ -553,7 +553,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                       ),
                       const PopupMenuItem<String>(
                         value: _eliminarOpcion,
-                        child: const ListTile(
+                        child: ListTile(
                             leading: Icon(Icons.delete_outline,
                                 color: Colors.redAccent),
                             title: Text('Eliminar',

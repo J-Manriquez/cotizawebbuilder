@@ -111,11 +111,19 @@ class UIComponents {
           Widget textWidget; // Widget que contendrá el texto formateado
 
           // Condición para el texto en itálica (ajusta si es necesario)
-          if (desc.startsWith('Para crear la página web que necesitas')) {
+          if (desc.startsWith('Para crear la página web que necesitas') || desc.startsWith('SEO o Search Engine Optimization,') || desc.startsWith('Un blog es una herramienta para compartir contenido en internet') || desc.startsWith('El servicio de soporte') || desc.startsWith('Número máximo') || desc.startsWith('El dominio es el nombre único y exclusivo') || desc.startsWith('Este servicio permite almacenar su página')) {
             textWidget = Text(
               desc,
               style: baseDescriptionStyle.copyWith(
                 fontStyle: FontStyle.italic, // Aplica itálica
+              ),
+            );
+          }
+          else if (desc.startsWith('Seleccione número de ')) {
+            textWidget = Text(
+              desc,
+              style: baseDescriptionStyle.copyWith(
+                fontWeight: FontWeight.bold, // Aplica itálica
               ),
             );
           }
