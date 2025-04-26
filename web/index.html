@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -24,7 +25,7 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="assets/icon/favicon.png"/>
+  <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
 
   <title>cotizawebbuilder</title>
   <link rel="manifest" href="manifest.json">
@@ -32,8 +33,144 @@
   <meta http-equiv="Access-Control-Allow-Origin" content="*">
   <meta http-equiv="Access-Control-Allow-Methods" content="GET, POST, OPTIONS">
   <meta http-equiv="Access-Control-Allow-Headers" content="Origin, Content-Type">
+
+  <style>
+    /* Estilos base (para móviles pequeños, menos de 480px) */
+    #loading {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #FFFFFF;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    .loading-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      margin-top: 15px;
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 3px solid #3498db;
+      animation: spin 1s linear infinite;
+    }
+
+    /* Imagen de logo más pequeña para móviles */
+    .loading-indicator img {
+      width: 80px;
+      height: auto;
+    }
+
+    /* Punto de quiebre 1: 480px (móviles más grandes) */
+    @media (min-width: 480px) {
+      .spinner {
+        width: 35px;
+        height: 35px;
+        margin-top: 18px;
+        border-width: 3px;
+      }
+
+      .loading-indicator img {
+        width: 100px;
+      }
+    }
+
+    /* Punto de quiebre 2: 767px (tablets) */
+    @media (min-width: 767px) {
+      .spinner {
+        width: 40px;
+        height: 40px;
+        margin-top: 20px;
+        border-width: 4px;
+      }
+
+      .loading-indicator img {
+        width: 120px;
+      }
+    }
+
+    /* Punto de quiebre 3: 1024px (desktops y tablets grandes) */
+    @media (min-width: 1024px) {
+      .spinner {
+        width: 50px;
+        height: 50px;
+        margin-top: 25px;
+        border-width: 5px;
+      }
+
+      .loading-indicator img {
+        width: 150px;
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .fade-out {
+      opacity: 0;
+    }
+  </style>
 </head>
+
 <body>
+  <!-- Este div se mostrará mientras Flutter se inicializa -->
+  <div id="loading">
+    <div class="loading-indicator">
+      <img src="assets/icon/app_icon.png" alt="Logo" />
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Aquí está el script de Flutter -->
+  <script>
+    window.addEventListener('load', function () {
+      // Ocultar el indicador de carga cuando Flutter esté listo
+      window.onFlutterReady = function () {
+        var loadingIndicator = document.getElementById('loading');
+        if (loadingIndicator) {
+          loadingIndicator.remove();
+        }
+      };
+    });
+  </script>
+
+  <script src="flutter.js" defer></script>
+  <script>
+    window.addEventListener('load', function (ev) {
+      // Detectar cuando Flutter esté completamente cargado
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function (engineInitializer) {
+          engineInitializer.initializeEngine().then(function (appRunner) {
+            appRunner.runApp();
+            // Señal para indicar que Flutter está listo
+            if (window.onFlutterReady) {
+              window.onFlutterReady();
+            }
+          });
+        }
+      });
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
+
 </body>
+
 </html>

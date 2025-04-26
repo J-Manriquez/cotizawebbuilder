@@ -10,15 +10,6 @@ import 'package:url_launcher/url_launcher.dart'; // Necesario para abrir WhatsAp
 import 'firebase_service.dart'; // Asume que aquí está ServicioFirebase.obtenerCotizacionesStream()
 import 'main.dart'; // Asume que aquí está MyApp.colorPrimario
 
-// Asegúrate de tener la dependencia url_launcher en tu pubspec.yaml:
-// dependencies:
-//   flutter:
-//     sdk: flutter
-//   url_launcher: ^6.0.0 # O la versión más reciente
-//   cloud_firestore: ^...
-//   intl: ^...
-//   firebase_core: ^...
-
 class CotizacionesScreen extends StatefulWidget {
   const CotizacionesScreen({super.key});
 
@@ -73,7 +64,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
               Expanded(
                 // Para que el título no se salga si es largo
                 child: Text(
-                  'Resumen - $nombreCliente',
+                  'Cliente: $nombreCliente',
                   style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
@@ -163,15 +154,18 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
     final String cuerpo =
         'Hola $nombreCliente,\n\nHablo desde AndoDevs. Recibimos una cotización de su parte y nos gustaría conversar sobre los detalles.\n\n¿Cuándo tendría disponibilidad para una breve llamada o reunión?\n\nSaludos,\nEl equipo de AndoDevs.';
 
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: correo,
-      queryParameters: {
-        'subject': asunto,
-        'body': cuerpo,
-      },
-    );
+    // Codifica manualmente el asunto y el cuerpo usando Uri.encodeQueryComponent
+    // Esto asegura que los espacios se conviertan en %20
+    // Codifica manualmente el asunto y cuerpo
+    final String asuntoCodificado = Uri.encodeComponent(asunto);
+    final String cuerpoCodificado = Uri.encodeComponent(cuerpo);
+    
+    // Construye la URI manualmente con los componentes ya codificados
+    // Usamos el parámetro 'query' directamente en lugar de 'queryParameters'
+    final Uri emailUri = Uri.parse(
+        'mailto:$correo?subject=$asuntoCodificado&body=$cuerpoCodificado');
 
+    // Lanza la URI usando url_launcher (o el método que prefieras)
     try {
       if (await canLaunchUrl(emailUri)) {
         await launchUrl(emailUri);
@@ -318,12 +312,250 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
     }
   }
 
+  // --- Widget Builder para la Tarjeta (Reutilizable) ---
+  Widget _buildCotizacionCard(BuildContext context,
+      Map<String, dynamic> cotizacionData, String cotizacionId) {
+    // Extraer datos con valores por defecto seguros
+    final String nombre =
+        cotizacionData['nombreCliente'] as String? ?? 'Nombre no disponible';
+    final String telefono = cotizacionData['telefonoCliente'] as String? ?? '';
+    final String correo = cotizacionData['correoCliente'] as String? ?? '';
+    final String nombreWeb =
+        cotizacionData['nombreWebDeseado'] as String? ?? '';
+    final String resumen = cotizacionData['resumenCotizacion'] as String? ??
+        'Resumen no disponible';
+    final Timestamp? fechaTimestamp =
+        cotizacionData['fechaRegistro'] as Timestamp?;
+    final String fechaFormateada = fechaTimestamp != null
+        ? _formatTimestamp(fechaTimestamp)
+        : 'Fecha no disponible';
+    final String estado = cotizacionData['estado'] as String? ?? 'Pendiente';
+
+    // Lógica para obtener la línea del resumen
+    final lines = resumen.split('\n');
+    final String lineaMostrada = lines.length >= 3
+        ? lines[lines.length - 3]
+        : (lines.isNotEmpty
+            ? lines.last
+            : resumen); // Lógica un poco más robusta
+    final String lineaSinPrimeraPalabra = lineaMostrada.contains(' ')
+        ? lineaMostrada.substring(lineaMostrada.indexOf(' ') + 1)
+        : lineaMostrada;
+
+    return Card(
+        margin: const EdgeInsets.symmetric(
+            horizontal: 0,
+            vertical: 0), // El Wrap/Padding se encargará del margen externo
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        // Clip.antiAlias es útil para asegurar que el InkWell no se salga de los bordes
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          // <-- 1. Añade InkWell aquí
+          // 2. Mueve la lógica onTap del ListTile aquí
+          onTap: () => _mostrarDetalleCotizacion(context, resumen, nombre),
+          // 3. Añade borderRadius para que el hover/splash coincida con la forma de la Card
+          borderRadius: BorderRadius.circular(8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // Importante para Wrap/GridView
+            children: [
+              ListTile(
+                contentPadding:
+                    const EdgeInsets.only(left: 16.0, right: 16.0, top: 10.0),
+                title: Text('Cliente: $nombre',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 20)),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 4.0), // Ajuste ligero
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Registrado: $fechaFormateada',
+                          style: TextStyle(
+                              fontSize: 16, color: Colors.grey.shade700)),
+                      const SizedBox(height: 4), // Espacio
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Estado: ',
+                            style: TextStyle(
+                                fontSize: 16, color: Colors.grey.shade700),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              color: _getColorForEstado(estado),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10.0,
+                                vertical:
+                                    2.0), // Ajuste ligero padding vertical
+                            child: Text(estado,
+                                style: const TextStyle(
+                                    fontSize:
+                                        14, // Ligeramente más pequeño para encajar mejor
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4), // Espacio
+                      if (telefono.isNotEmpty)
+                        Text('Tel: $telefono',
+                            style: TextStyle(
+                                fontSize: 15,
+                                color: Colors
+                                    .grey.shade700)), // Tamaño consistente
+                      if (correo.isNotEmpty)
+                        Text('Correo: $correo',
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey.shade700)),
+                      if (nombreWeb.isNotEmpty)
+                        Text('Web Deseada: $nombreWeb',
+                            style: TextStyle(
+                                fontSize: 15, color: Colors.grey.shade700)),
+                      // const SizedBox(height: 0), // No necesario aquí
+                    ],
+                  ),
+                ),
+                trailing: PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.grey),
+                  tooltip: 'Más opciones',
+                  onSelected: (String result) {
+                    // Manejar la selección del menú
+                    switch (result) {
+                      case _verOpcion:
+                        _mostrarDetalleCotizacion(context, resumen, nombre);
+                        break;
+                      case _whatsappOpcion:
+                        if (telefono.isNotEmpty) {
+                          _enviarWhatsApp(telefono, nombre);
+                        } else {
+                          _mostrarErrorSnackBar(
+                              'No hay número de teléfono registrado.');
+                        }
+                        break;
+                      case _correoOpcion:
+                        if (correo.isNotEmpty) {
+                          _enviarCorreo(correo, nombre);
+                        } else {
+                          _mostrarErrorSnackBar(
+                              'No hay correo electrónico registrado.');
+                        }
+                        break;
+                      case _eliminarOpcion:
+                        _eliminarCotizacion(cotizacionId, nombre);
+                        break;
+                      case _estadoOpcion:
+                        _cambiarEstadoCotizacion(cotizacionId, estado);
+                        break;
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: _verOpcion,
+                      child: ListTile(
+                          leading: Icon(Icons.visibility),
+                          title: Text('Ver Cotización')),
+                    ),
+                    PopupMenuItem<String>(
+                      value: _whatsappOpcion,
+                      enabled: telefono
+                          .isNotEmpty, // Habilitar/deshabilitar dinámicamente
+                      child: ListTile(
+                          leading: Icon(Icons.message,
+                              color: telefono.isNotEmpty
+                                  ? null
+                                  : Colors
+                                      .grey), // Estilo visual si deshabilitado
+                          title: Text('Enviar WhatsApp',
+                              style: TextStyle(
+                                  color: telefono.isNotEmpty
+                                      ? null
+                                      : Colors.grey))),
+                    ),
+                    PopupMenuItem<String>(
+                      value: _correoOpcion,
+                      enabled: correo.isNotEmpty,
+                      child: ListTile(
+                          leading: Icon(Icons.email,
+                              color: correo.isNotEmpty ? null : Colors.grey),
+                          title: Text('Enviar Correo',
+                              style: TextStyle(
+                                  color:
+                                      correo.isNotEmpty ? null : Colors.grey))),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem<String>(
+                      value: _estadoOpcion,
+                      child: ListTile(
+                        leading: Icon(Icons.sync_alt),
+                        title: Text('Cambiar Estado'),
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: _eliminarOpcion,
+                      child: ListTile(
+                          leading: Icon(Icons.delete_outline,
+                              color: Colors.redAccent),
+                          title: Text('Eliminar',
+                              style: TextStyle(color: Colors.redAccent))),
+                    ),
+                  ],
+                ),
+                // onTap: () => _mostrarDetalleCotizacion(context, resumen, nombre),
+              ),
+              // Contenedor de lineaSinPrimeraPalabra ahora está fuera del ListTile
+              Padding(
+                padding: const EdgeInsets.only(
+                    bottom: 15.0,
+                    left: 16.0,
+                    right: 16.0,
+                    top: 5.0), // Ajustar padding
+                child: Center(
+                  // Centrar el contenedor
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0, vertical: 4.0), // Padding interno
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color.fromARGB(255, 56, 116, 53),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      lineaSinPrimeraPalabra,
+                      style: const TextStyle(
+                        fontSize: 16, // Ligeramente más pequeño
+                        color: Color.fromARGB(255, 56, 116, 53),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign
+                          .center, // Centrar texto dentro del contenedor
+                      maxLines: 2, // Permitir hasta 2 líneas si es necesario
+                      overflow: TextOverflow
+                          .ellipsis, // Añadir puntos suspensivos si excede
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: // const Text('Cotizaciones Recibidas'),
-            Stack(
+        // title: const Text('Cotizaciones Recibidas'), // Comentado en tu original
+        title: Stack(
+          // Tu título estilizado
           alignment: Alignment.center,
           children: [
             Text(
@@ -344,7 +576,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                 fontSize: 24,
                 letterSpacing: 1,
                 fontWeight: FontWeight.w900,
-                color: MyApp.colorSecundario,
+                color: MyApp.colorSecundario, // Usando el color secundario
               ),
             ),
           ],
@@ -352,6 +584,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
         backgroundColor: MyApp.colorPrimario, // Usa tu color primario
         iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: const TextStyle(
+          // Estilo por defecto si el Stack no estuviera
           color: Colors.white,
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -378,194 +611,61 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
 
           final cotizaciones = snapshot.data!.docs;
 
-          return ListView.builder(
-            itemCount: cotizaciones.length,
-            itemBuilder: (context, index) {
-              final cotizacionData = cotizaciones[index].data();
-              final cotizacionId = cotizaciones[index].id;
+          // Usamos LayoutBuilder para decidir qué layout mostrar
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final double screenWidth = constraints.maxWidth;
+              const double breakpoint =
+                  730.0; // Punto de quiebre para cambiar layout
+              const double cardMaxWidth =
+                  340.0; // Ancho máximo para cada tarjeta en modo grid
 
-              final String nombre =
-                  cotizacionData['nombreCliente'] ?? 'Nombre no disponible';
-              final String telefono = cotizacionData['telefonoCliente'] ??
-                  ''; // Vacío si no disponible para evitar errores en WhatsApp
-              final String correo = cotizacionData['correoCliente'] ??
-                  ''; // Vacío si no disponible para evitar errores en Mail
-              final String nombreWeb = cotizacionData['nombreWebDeseado'] ?? '';
-              final String resumen = cotizacionData['resumenCotizacion'] ??
-                  'Resumen no disponible';
-              final Timestamp? fechaTimestamp = cotizacionData['fechaRegistro'];
-              final String fechaFormateada = fechaTimestamp != null
-                  ? _formatTimestamp(fechaTimestamp)
-                  : 'Fecha no disponible';
-              final String estado = cotizacionData['estado'] ??
-                  'Pendiente'; // Estado por defecto 'Pendiente'
-              final lines = resumen.split('\n');
-              // Si hay al menos 3 líneas, toma la antepenúltima; de lo contrario, muestra toda la cadena
-              final String lineaMostrada =
-                  lines.length >= 3 ? lines[lines.length - 3] : resumen;
-
-              return Card(
-                margin: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8), // Aumenta margen
-                elevation: 4, // Sombra más pronunciada
-                shape: RoundedRectangleBorder(
-                  // Bordes ligeramente redondeados
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10.0, horizontal: 16.0), // Padding interno
-                  // leading: CircleAvatar(
-                  //   // Icono o inicial en un círculo
-                  //   backgroundColor: MyApp.colorSecundario.withOpacity(0.8),
-                  //   foregroundColor: Colors.white,
-                  //   child: Text(
-                  //       nombre.isNotEmpty ? nombre[0].toUpperCase() : '?',
-                  //       style: const TextStyle(fontWeight: FontWeight.bold)),
-                  //   // child: Icon(Icons.person, color: Colors.white), // Alternativa con icono
-                  // ),
-                  title: Text('Cliente: $nombre',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 20)),
-                  subtitle: Padding(
-                    // Añade padding al subtítulo
-                    padding: const EdgeInsets.only(top: 5.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Registrado: $fechaFormateada',
-                            style: TextStyle(
-                                fontSize: 16, color: Colors.grey.shade700)),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Estado: ',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color.fromARGB(255, 158, 158, 158)),
-                            ),
-                            Container(
-                                color: _getColorForEstado(estado),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 5.0),
-                                child: Text(estado,
-                                    style: const TextStyle(
-                                        fontSize: 16, color: Colors.white))),
-                          ],
-                        ),
-                        // const SizedBox(height: 6),
-                        if (telefono.isNotEmpty)
-                          Text('Tel: $telefono',
-                              style: TextStyle(color: Colors.grey.shade700)),
-                        if (correo.isNotEmpty)
-                          Text('Correo: $correo',
-                              style: TextStyle(color: Colors.grey.shade700)),
-                        if (nombreWeb.isNotEmpty)
-                          Text('Web Deseada: $nombreWeb',
-                              style: TextStyle(color: Colors.grey.shade700)),
-                        const SizedBox(height: 2),
-                        // Separa el texto en líneas
-                        Container(
-                          color: const Color.fromARGB(255, 56, 116, 53),
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Text(
-                            lineaMostrada,
-                            style: const TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900),
-                            // Si deseas asegurarte de que se renderice exactamente una línea, puedes configurar maxLines: 1
-                            maxLines: 1,
-                            overflow: TextOverflow
-                                .visible, // sin recortes, para mostrarla completa
-                          ),
-                        ),
-                      ],
+              if (screenWidth < breakpoint) {
+                // --- Layout para pantallas pequeñas: ListView ---
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8), // Padding que tenías en Card
+                  itemCount: cotizaciones.length,
+                  itemBuilder: (context, index) {
+                    final cotizacionData = cotizaciones[index].data();
+                    final cotizacionId = cotizaciones[index].id;
+                    // Reutilizamos el builder de la tarjeta
+                    // Añadimos un padding inferior a cada item para simular el `margin` vertical original de la Card
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: _buildCotizacionCard(
+                          context, cotizacionData, cotizacionId),
+                    );
+                  },
+                );
+              } else {
+                // --- Layout para pantallas anchas: Wrap ---
+                return SingleChildScrollView(
+                  // Para permitir scroll si el contenido es muy alto
+                  child: Padding(
+                    padding: const EdgeInsets.all(
+                        16.0), // Espaciado general del grid
+                    child: Wrap(
+                      spacing: 16.0, // Espacio horizontal entre tarjetas
+                      runSpacing:
+                          16.0, // Espacio vertical entre filas de tarjetas
+                      alignment: WrapAlignment
+                          .center, // Centrar las tarjetas si no llenan el ancho
+                      children: cotizaciones.map((doc) {
+                        final cotizacionData = doc.data();
+                        final cotizacionId = doc.id;
+                        // Limitamos el ancho de cada tarjeta usando ConstrainedBox
+                        return ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                          child: _buildCotizacionCard(
+                              context, cotizacionData, cotizacionId),
+                        );
+                      }).toList(),
                     ),
                   ),
-                  trailing: PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert,
-                        color: Colors.grey), // Icono del menú
-                    tooltip: 'Más opciones',
-                    onSelected: (String result) {
-                      // Manejar la selección del menú
-                      switch (result) {
-                        case _verOpcion:
-                          _mostrarDetalleCotizacion(context, resumen, nombre);
-                          break;
-                        case _whatsappOpcion:
-                          if (telefono.isNotEmpty) {
-                            _enviarWhatsApp(telefono, nombre);
-                          } else {
-                            _mostrarErrorSnackBar(
-                                'No hay número de teléfono registrado.');
-                          }
-                          break;
-                        case _correoOpcion:
-                          if (correo.isNotEmpty) {
-                            _enviarCorreo(correo, nombre);
-                          } else {
-                            _mostrarErrorSnackBar(
-                                'No hay correo electrónico registrado.');
-                          }
-                          break;
-                        case _eliminarOpcion:
-                          _eliminarCotizacion(cotizacionId, nombre);
-                          break;
-                        case _estadoOpcion:
-                          _cambiarEstadoCotizacion(cotizacionId, estado);
-                          break;
-                      }
-                    },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: _verOpcion,
-                        child: ListTile(
-                            leading: Icon(Icons.visibility),
-                            title: Text('Ver Cotización')),
-                      ),
-                      // Deshabilitar opciones si no hay datos
-                      PopupMenuItem<String>(
-                        value: _whatsappOpcion,
-                        enabled: telefono
-                            .isNotEmpty, // Habilita solo si hay teléfono
-                        child: const ListTile(
-                            leading: Icon(Icons
-                                .message /* O icono de WhatsApp si lo tienes */),
-                            title: Text('Enviar WhatsApp')),
-                      ),
-                      PopupMenuItem<String>(
-                        value: _correoOpcion,
-                        enabled:
-                            correo.isNotEmpty, // Habilita solo si hay correo
-                        child: const ListTile(
-                            leading: Icon(Icons.email),
-                            title: Text('Enviar Correo')),
-                      ),
-                      const PopupMenuDivider(), // Separador visual
-                      const PopupMenuItem<String>(
-                        value: _estadoOpcion,
-                        child: ListTile(
-                            leading: Icon(Icons.sync_alt),
-                            title: Text('Cambiar Estado')),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: _eliminarOpcion,
-                        child: ListTile(
-                            leading: Icon(Icons.delete_outline,
-                                color: Colors.redAccent),
-                            title: Text('Eliminar',
-                                style: TextStyle(color: Colors.redAccent))),
-                      ),
-                    ],
-                  ),
-                  // Quita el onTap de la tarjeta principal o haz que también abra el detalle
-                  onTap: () => _mostrarDetalleCotizacion(context, resumen,
-                      nombre), // Ahora el tap en la tarjeta también abre el modal
-                ),
-              );
+                );
+              }
             },
           );
         },
