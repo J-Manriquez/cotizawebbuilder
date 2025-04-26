@@ -272,10 +272,10 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
     // Recolecta los datos del cliente de los controladores
     final Map<String, String> datosClienteParaPdf = {
-       'nombre': _nombreController.text.trim(),
-       'telefono': _telefonoController.text.trim(),
-       'correo': _correoController.text.trim(),
-       'nombreWeb': _nombreWebController.text.trim(),
+      'nombre': _nombreController.text.trim(),
+      'telefono': _telefonoController.text.trim(),
+      'correo': _correoController.text.trim(),
+      'nombreWeb': _nombreWebController.text.trim(),
     };
 
     try {
@@ -490,61 +490,68 @@ Me gustaría saber cuándo podriamos conversar del tema.''';
 
                     // Botón Enviar Copia al Correo del Usuario (Usa Webhook)
                     ElevatedButton.icon(
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.email_outlined,
-                              color: Colors.white),
-                      label: Text(
-                          'Enviarme Cotización vía Email', // Texto actualizado
-                          style: GoogleFonts.poppins(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colorSecundario,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        icon: _isSending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.email_outlined,
+                                color: Colors.white),
+                        label: Text(
+                            'Enviarme Cotización vía Email', // Texto actualizado
+                            style: GoogleFonts.poppins(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colorSecundario,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
-                      // Llama a la función que usa el webhook para enviar al usuario
-                      onPressed: _isSending
-                          ? null
-                          : _enviarCotizacionAUsuarioViaWebhook,
-                    ),
+                        // Llama a la función que usa el webhook para enviar al usuario
+                        onPressed: _isSending
+                            ? null
+                            : () {
+                                _enviarCotizacionAUsuarioViaWebhook;
+                                _guardarCotizacionYNotificar;
+                              }),
                     const SizedBox(height: 18),
 
                     // --- NUEVO BOTÓN: Enviar a la Empresa via WhatsApp Webhook ---
                     ElevatedButton.icon(
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.phone_android_rounded, // Icono de WhatsApp
-                              color: Colors.white),
-                      label: Text('Solicitar Cotizacion vía WhatsApp',
-                          style: GoogleFonts.poppins(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color(0xFF25D366), // Color típico de WhatsApp
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        icon: _isSending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Icon(
+                                Icons
+                                    .phone_android_rounded, // Icono de WhatsApp
+                                color: Colors.white),
+                        label: Text('Solicitar Cotizacion vía WhatsApp',
+                            style: GoogleFonts.poppins(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(
+                              0xFF25D366), // Color típico de WhatsApp
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                      ),
-                      // Llama a la nueva función que usa el webhook para enviar a la empresa
-                      onPressed: _isSending
-                          ? null
-                          : () async { // Esta es la función anónima que onPressed espera (VoidCallback)
-                          String nombreCiente = _nombreController.text.trim();
-        // Llama a tu función _enviarWhatsApp con los datos
-        // Como _enviarWhatsApp es async, la función anónima también debe ser async para usar await
-        await _enviarWhatsApp(_companyWhatsappNumber, nombreCiente);
-      }
-                    ),
+                        // Llama a la nueva función que usa el webhook para enviar a la empresa
+                        onPressed: _isSending
+                            ? null
+                            : () async {
+                                // Esta es la función anónima que onPressed espera (VoidCallback)
+                                String nombreCiente =
+                                    _nombreController.text.trim();
+                                // Llama a tu función _enviarWhatsApp con los datos
+                                // Como _enviarWhatsApp es async, la función anónima también debe ser async para usar await
+                                await _enviarWhatsApp(
+                                    _companyWhatsappNumber, nombreCiente);
+                                _guardarCotizacionYNotificar;
+                              }),
                     const SizedBox(height: 18),
 
                     // --- BOTÓN Existente: Enviar a Firebase ---
@@ -591,7 +598,10 @@ Me gustaría saber cuándo podriamos conversar del tema.''';
                       ),
                       // Deshabilita si las fuentes no están listas o si ya está enviando
                       onPressed: widget.pdfFontsReady && !_isSending
-                          ? _handlePdfGeneration
+                          ? () {
+                              _handlePdfGeneration;
+                              _guardarCotizacionYNotificar;
+                            }
                           : null,
                     ),
                     if (!widget
