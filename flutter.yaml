@@ -1,0 +1,11 @@
+# flutter.yaml
+
+web:
+  # Esto configura el proxy de desarrollo para Flutter Web
+  # Solo afecta el entorno de desarrollo, no la compilación final.
+  proxies:
+    # Cuando el navegador solicite /webhook-make,
+    # el servidor de desarrollo de Flutter redirigirá la solicitud a la URL de destino (Make.com)
+    - from: /webhook-make
+      to: https://hook.us2.make.com/0d14u81dkih3tc9poudur5wpr8sntip1 # <-- ¡Pega aquí la URL de Make.com!
+

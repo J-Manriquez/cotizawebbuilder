@@ -43,13 +43,17 @@ class PdfService {
 
   /// Genera el contenido del PDF como bytes (Uint8List)
   /// Requiere las opciones seleccionadas del formulario.
-  Future<Uint8List> _generarPdfBytes(Map<String, String?> opcionesSeleccionadas) async {
+  /// Opcionalmente, recibe datos del cliente para incluirlos.
+  Future<Uint8List> _generarPdfBytes(
+    Map<String, String?> opcionesSeleccionadas, {
+    Map<String, String>? datosCliente, // Nuevo parámetro opcional
+  }) async {
     // Asegura que las fuentes estén cargadas antes de proceder
     if (!_fontsLoaded || _robotoRegular == null || _robotoBold == null || _robotoItalic == null) {
       print("Intento de generar PDF sin fuentes cargadas. Intentando cargar...");
       await loadFonts(); // Intenta cargar si no lo estaban
       if (!_fontsLoaded) { // Si la carga falla de nuevo
-         throw Exception("Las fuentes PDF no están disponibles para generar el documento.");
+          throw Exception("Las fuentes PDF no están disponibles para generar el documento.");
       }
     }
 
@@ -105,10 +109,38 @@ class PdfService {
               pw.SizedBox(height: 20),
               pw.Text('Fecha: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}', style: baseTextStyle),
               pw.SizedBox(height: 20),
+
+              // --- Sección de Datos del Cliente (Condicional) ---
+              if (datosCliente != null && datosCliente.isNotEmpty) ...[
+                pw.Header(level: 1, textStyle: headerTextStyle, child: pw.Text('Datos del Cliente:')),
+                pw.Divider(),
+                pw.Table(
+                  columnWidths: const {
+                    0: pw.FixedColumnWidth(150), // Ancho para la etiqueta (Nombre:)
+                    1: pw.FlexColumnWidth(), // Ancho flexible para el valor
+                  },
+                  children: [
+                    // Construye filas para cada dato del cliente
+                    if (datosCliente['nombre'] != null && datosCliente['nombre']!.isNotEmpty)
+                      _buildInfoRow('Nombre:', datosCliente['nombre']!, baseFont: baseTextStyle, boldFont: boldTextStyle),
+                    if (datosCliente['telefono'] != null && datosCliente['telefono']!.isNotEmpty)
+                      _buildInfoRow('Teléfono:', datosCliente['telefono']!, baseFont: baseTextStyle, boldFont: boldTextStyle),
+                    if (datosCliente['correo'] != null && datosCliente['correo']!.isNotEmpty)
+                      _buildInfoRow('Correo Electrónico:', datosCliente['correo']!, baseFont: baseTextStyle, boldFont: boldTextStyle),
+                     if (datosCliente['nombreWeb'] != null && datosCliente['nombreWeb']!.isNotEmpty)
+                      _buildInfoRow('Nombre Sitio Web:', datosCliente['nombreWeb']!, baseFont: baseTextStyle, boldFont: boldTextStyle),
+                  ],
+                ),
+                pw.SizedBox(height: 30), // Espacio después de los datos del cliente
+              ],
+
+              // --- Sección de Servicios Seleccionados ---
               pw.Header(level: 1, textStyle: headerTextStyle, child: pw.Text('Servicios Seleccionados:')),
               pw.Divider(),
               ...itemsSeleccionadosWidgets,
               pw.SizedBox(height: 30),
+
+              // --- Sección de Precios Estimados ---
               pw.Header(level: 1, textStyle: headerTextStyle, child: pw.Text('Precios Estimados:')),
               pw.Divider(),
               pw.Table(columnWidths: const {
@@ -120,8 +152,10 @@ class PdfService {
                 _buildPriceRow('Precio Internacional (USD aprox.):', precioInternacional, isUSD: true, baseFont: baseTextStyle, boldFont: boldTextStyle),
               ]),
               pw.SizedBox(height: 40),
+
+              // --- Nota Final ---
               pw.Text(
-                'Nota: Esta es una cotización preliminar. Los precios finales pueden variar según requisitos específicos y negociaciones. Contacta con nosotros para más detalles.',
+                'Nota: Esta es una cotización preliminar. Los precios finales pueden variar al añadir nuevos requisitos y/o segun negociaciones adicionales. Contacta con nosotros para más detalles.',
                 style: italicTextStyle,
                 textAlign: pw.TextAlign.justify,
               ),
@@ -137,7 +171,7 @@ class PdfService {
   /// Construye una fila para la tabla de precios en el PDF
   pw.TableRow _buildPriceRow(String label, int value, {bool isUSD = false, required pw.TextStyle baseFont, required pw.TextStyle boldFont}) {
     final String formattedValue = ServicioFirebase.formatearNumeroConPuntos(value);
-    final String prefix = isUSD ? 'USD \$' : '\$';
+    final String prefix = isUSD ? 'USD \$' : '\$'; // Asumiendo moneda local para precios no USD
     return pw.TableRow(
       children: [
         pw.Padding(
@@ -150,15 +184,35 @@ class PdfService {
     );
   }
 
+  /// Construye una fila para la tabla de información general (como datos del cliente)
+  pw.TableRow _buildInfoRow(String label, String value, {required pw.TextStyle baseFont, required pw.TextStyle boldFont}) {
+     return pw.TableRow(
+      children: [
+        pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 4),
+            child: pw.Text(label, style: boldFont)),
+        pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 4),
+            child: pw.Text(value, style: baseFont)),
+      ],
+    );
+  }
+
+
   /// Genera y luego descarga (web) o comparte (móvil/escritorio) el PDF.
+  /// Permite incluir datos del cliente opcionalmente.
   Future<void> generateAndHandlePdf({
     required Map<String, String?> opcionesSeleccionadas,
     String? baseFilename = 'cotizacion-web', // Nombre base opcional
+    Map<String, String>? datosCliente, // Nuevo parámetro opcional
   }) async {
-     // Asegurarse que las fuentes estén cargadas es manejado dentro de _generarPdfBytes
+      // Asegurarse que las fuentes estén cargadas es manejado dentro de _generarPdfBytes
     try {
       print('Generando PDF desde PdfService...');
-      final Uint8List pdfBytes = await _generarPdfBytes(opcionesSeleccionadas);
+      final Uint8List pdfBytes = await _generarPdfBytes(
+        opcionesSeleccionadas,
+        datosCliente: datosCliente, // Pasar los datos del cliente
+      );
       final String filename = '$baseFilename-${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf';
       print('PDF generado (${pdfBytes.lengthInBytes} bytes). Manejando salida...');
 
@@ -177,7 +231,7 @@ class PdfService {
     } catch (e) {
       print('Error en generateAndHandlePdf: $e');
       // Relanzar la excepción para que la UI pueda mostrar un mensaje
-      throw Exception('Error al procesar el PDF: $e');
+      throw Exception('Error al procesar el PDF: ${e.toString()}'); // Mejorar mensaje
     }
   }
 

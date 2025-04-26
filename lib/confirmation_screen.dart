@@ -2,11 +2,14 @@
 import 'package:flutter/foundation.dart'; // Para kIsWeb
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart'; // Para mailto:
+import 'package:url_launcher/url_launcher.dart'; // Mantener por si se usa en otra parte
+import 'dart:convert'; // Necesario para jsonEncode
+import 'package:http/http.dart' as http; // Importar el paquete http
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // Importa servicios y componentes necesarios
 // ignore: unused_import
-import 'firebase_service.dart'; // Para formateo si es necesario
+import 'firebase_service.dart'; // Para formateo si es necesario (y _guardarCotizacionYNotificar)
 import 'ui_components.dart';
 import 'main.dart'; // Para colores
 import 'pdf_service.dart'; // Para la instancia y descarga
@@ -37,6 +40,18 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
   final TextEditingController _correoController = TextEditingController();
 
   bool _isSending = false; // Para mostrar indicador de carga en botones
+
+  // ** --- URL DEL WEBHOOK DE MAKE.COM --- **
+  // ** REEMPLAZA 'TU_WEBHOOK_URL_DE_MAKE.COM_AQUI' con la URL que copiaste de Make.com **
+  final String _makeWebhookUrl =
+      'https://hook.us2.make.com/0d14u81dkih3tc9poudur5wpr8sntip1';
+  // ** ----------------------------------- **
+
+  // ** --- NÚMERO DE WHATSAPP DE LA EMPRESA --- **
+  // ** Reemplaza 'NUMERO_EMPRESA_WHATSAPP' con el número de WhatsApp de tu empresa,
+  // ** incluyendo el código de país, sin signos + o espacios, ej: '56912345678' **
+  final String _companyWhatsappNumber = '56966965146';
+  // ** ------------------------------------- **
 
   @override
   void dispose() {
@@ -78,83 +93,101 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     return null;
   }
 
-  // --- Lógica de Envío (Simulada con mailto:) ---
-  Future<void> _enviarCorreo(
-      String destinatario, String asunto, String cuerpo) async {
-    setState(() => _isSending = true);
-
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: destinatario,
-      queryParameters: {
-        'subject': asunto,
-        'body': cuerpo,
-      },
-    );
-
+  // --- Lógica de Envío al Webhook de Make.com ---
+  // Función que envía los datos de la cotización al webhook
+  Future<void> _sendCotizacionToWebhook(Map<String, dynamic> data) async {
     try {
-      if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
+      final response = await http.post(
+        Uri.parse(_makeWebhookUrl), // Usa la URL del webhook
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(data), // Convierte el mapa a JSON
+      );
+
+      // Verifica la respuesta del webhook
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print(
+            'Webhook enviado a Make.com correctamente. Respuesta: ${response.body}');
+        // Puedes manejar la respuesta de Make.com si envía algún mensaje útil
       } else {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'No se pudo abrir el cliente de correo. ¿Tienes uno instalado?')),
-        );
+        print('Error al enviar webhook a Make.com: ${response.statusCode}');
+        print('Cuerpo del error: ${response.body}');
+        // Lanza una excepción para que el catch del llamador la maneje
+        throw Exception(
+            'Failed to send data to webhook: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error al intentar lanzar mailto: $e');
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al preparar el correo: $e')),
-      );
+      print('Excepción al enviar webhook: $e');
+      // Vuelve a lanzar la excepción para ser manejada por el llamador
+      throw e;
+    }
+  }
+
+  // --- ACCIÓN MODIFICADA (Existente): Enviar copia al usuario mediante Webhook ---
+  void _enviarCotizacionAUsuarioViaWebhook() async {
+    // 1. Validar el formulario
+    if (!_formKey.currentState!.validate()) {
+      return; // No hacer nada si el formulario no es válido
+    }
+
+    // 2. Mostrar indicador de carga
+    setState(() => _isSending = true);
+
+    // 3. Recoger y preparar los datos para enviar al webhook
+    String nombre = _nombreController.text.trim();
+    String nombreWeb = _nombreWebController.text.trim();
+    String telefono = _telefonoController.text.trim();
+    String correo = _correoController.text.trim();
+    String resumen = widget.cotizacionTextoResumen;
+    Map<String, String?> opcionesSeleccionadas = widget.opcionesSeleccionadas;
+
+    // Prepara el mapa de datos que se enviará como JSON al webhook
+    Map<String, dynamic> datosParaWebhook = {
+      'tipo_envio': 'copia_usuario_email', // Indicador para Make.com
+      'destinatario_email': correo,
+      'cliente_nombre': nombre,
+      'cliente_telefono': telefono,
+      'cliente_nombre_web': nombreWeb.isNotEmpty ? nombreWeb : null,
+      'resumen_cotizacion_texto': resumen, // El texto formateado del resumen
+      'opciones_seleccionadas': opcionesSeleccionadas, // Opciones seleccionadas
+      // Puedes añadir cualquier otro dato relevante aquí
+    };
+
+    try {
+      // 4. Llamar a la función que envía los datos al webhook
+      await _sendCotizacionToWebhook(datosParaWebhook);
+
+      // 5. Mostrar mensaje de éxito (si el widget sigue montado)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Copia de cotización enviada a tu correo!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Opcional: Limpiar el formulario o navegar
+      }
+    } catch (e) {
+      // 6. Mostrar mensaje de error (si el widget sigue montado)
+      print('Error en UI al enviar cotización via webhook: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al enviar la cotización: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      // Asegurarse de que el estado se revierta incluso si hay errores
+      // 7. Ocultar indicador de carga (si el widget sigue montado)
       if (mounted) {
         setState(() => _isSending = false);
       }
     }
   }
 
-  // Prepara el cuerpo del correo con los detalles
-  String _prepararCuerpoCorreo() {
-    String nombre = _nombreController.text.trim();
-    String nombreWeb = _nombreWebController.text.trim();
-    String telefono = _telefonoController.text.trim();
-    String correo = _correoController.text.trim();
-
-    String cuerpo = 'Hola,\n\n';
-    cuerpo += 'He generado una cotización y estoy interesado/a.\n\n';
-    cuerpo += 'Mis Datos:\n';
-    cuerpo += 'Nombre: $nombre\n';
-    if (nombreWeb.isNotEmpty) {
-      cuerpo += 'Nombre Web Deseado: $nombreWeb\n';
-    }
-    cuerpo += 'Teléfono: $telefono\n';
-    cuerpo += 'Correo: $correo\n\n';
-    cuerpo += '--- Resumen Cotización Generada ---\n';
-    cuerpo +=
-        '${widget.cotizacionTextoResumen}\n'; // Usa el texto ya formateado
-    cuerpo += '----------------------------------\n\n';
-
-    return cuerpo;
-  }
-
-  // Acción: Enviar cotización a sí mismo
-  void _enviarCorreoAUsuario() {
-    if (_formKey.currentState!.validate()) {
-      String correoUsuario = _correoController.text.trim();
-      String asunto = 'Cotización Web Generada en Ando Devs';
-      String cuerpo = _prepararCuerpoCorreo();
-      cuerpo +=
-          'Gracias por usar nuestro cotizador, esperamos que nos elijas.\n';
-
-      _enviarCorreo(correoUsuario, asunto, cuerpo);
-    }
-  }
-
-  // --- ACCIÓN MODIFICADA: Guardar cotización en Firebase ---
+  // --- ACCIÓN: Guardar cotización en Firebase ---
   Future<void> _guardarCotizacionYNotificar() async {
     // 1. Validar el formulario
     if (!_formKey.currentState!.validate()) {
@@ -173,6 +206,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
 
     try {
       // 4. Llamar al servicio de Firebase para guardar
+      // Asegúrate de que ServicioFirebase.guardarCotizacion existe y funciona
       await ServicioFirebase.guardarCotizacion(
         nombre: nombre,
         nombreWeb:
@@ -236,17 +270,19 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       },
     );
 
+    // Recolecta los datos del cliente de los controladores
+    final Map<String, String> datosClienteParaPdf = {
+       'nombre': _nombreController.text.trim(),
+       'telefono': _telefonoController.text.trim(),
+       'correo': _correoController.text.trim(),
+       'nombreWeb': _nombreWebController.text.trim(),
+    };
+
     try {
-      // Llama al método del servicio PDF pasado desde HomeScreen
+      // Llama al método del servicio PDF pasando los datos del cliente
       await widget.pdfService.generateAndHandlePdf(
         opcionesSeleccionadas: widget.opcionesSeleccionadas,
-        // Puedes añadir datos del cliente al PDF si modificas PdfService
-        // datosCliente: {
-        //   'nombre': _nombreController.text.trim(),
-        //   'telefono': _telefonoController.text.trim(),
-        //   'correo': _correoController.text.trim(),
-        //   'nombreWeb': _nombreWebController.text.trim(),
-        // },
+        datosCliente: datosClienteParaPdf, // <-- PASA LOS DATOS AQUÍ
       );
 
       if (mounted) Navigator.of(context).pop(); // Cierra el diálogo
@@ -268,6 +304,54 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
     }
   }
 
+  // Helper para mostrar Snackbars de error
+  void _mostrarErrorSnackBar(String mensaje) {
+    if (mounted) {
+      // Verifica si el widget está montado antes de usar context
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensaje),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
+  Future<void> _enviarWhatsApp(String telefono, String nombreCliente) async {
+    // Limpieza básica del número (quitar espacios, guiones) y añadir código país si es necesario
+    // Asumimos formato chileno (+569XXXXXXXX)
+    String telefonoLimpio = telefono.replaceAll(RegExp(r'[\s-]+'), '');
+    if (telefonoLimpio.length == 9 && telefonoLimpio.startsWith('9')) {
+      telefonoLimpio =
+          '+56$telefonoLimpio'; // Añade código de Chile si parece un móvil chileno
+    } else if (telefonoLimpio.length == 8) {
+      // Podría ser un número fijo, adaptar si es necesario o manejar el error
+      telefonoLimpio =
+          '+569$telefonoLimpio'; // Asumiendo que es móvil y falta el 9 inicial
+    }
+    // Añade más validaciones según los formatos que esperes
+    String resumen = widget.cotizacionTextoResumen;
+    final String mensaje =
+        '''Hola, soy $nombreCliente, realice la siguiente cotizacion en AndoDevs: 
+$resumen 
+Me gustaría saber cuándo podriamos conversar del tema.''';
+    final Uri whatsappUri = Uri.parse(
+        'https://wa.me/$telefonoLimpio?text=${Uri.encodeComponent(mensaje)}');
+
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri,
+            mode: LaunchMode.externalApplication); // Abre fuera de la app
+      } else {
+        print('No se pudo abrir WhatsApp para el número: $telefonoLimpio');
+        _mostrarErrorSnackBar('No se pudo abrir WhatsApp. ¿Está instalado?');
+      }
+    } catch (e) {
+      print('Error al intentar abrir WhatsApp: $e');
+      _mostrarErrorSnackBar('Error al intentar contactar por WhatsApp.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const Color colorPrimario = MyApp.colorPrimario;
@@ -279,8 +363,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       appBar: AppBar(
         // Añadir botón de retroceso si se desea
         // leading: IconButton(
-        //   icon: Icon(Icons.arrow_back, color: Colors.white),
-        //   onPressed: () => Navigator.of(context).pop(),
+        //   icon: Icon(Icons.arrow_back, color: Colors.white),
+        //   onPressed: () => Navigator.of(context).pop(),
         // ),
         title: Stack(
           // Mismo estilo de título que HomeScreen
@@ -404,7 +488,7 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                       margin: const EdgeInsets.symmetric(vertical: 14),
                     ),
 
-                    // Botón Enviar Copia al Correo del Usuario
+                    // Botón Enviar Copia al Correo del Usuario (Usa Webhook)
                     ElevatedButton.icon(
                       icon: _isSending
                           ? const SizedBox(
@@ -414,7 +498,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                                   strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.email_outlined,
                               color: Colors.white),
-                      label: Text('Enviarme Copia de la Cotización',
+                      label: Text(
+                          'Enviarme Cotización vía Email', // Texto actualizado
                           style: GoogleFonts.poppins(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colorSecundario,
@@ -423,11 +508,14 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: _isSending ? null : _enviarCorreoAUsuario,
+                      // Llama a la función que usa el webhook para enviar al usuario
+                      onPressed: _isSending
+                          ? null
+                          : _enviarCotizacionAUsuarioViaWebhook,
                     ),
                     const SizedBox(height: 18),
 
-                    // --- BOTÓN MODIFICADO: Enviar a Firebase ---
+                    // --- NUEVO BOTÓN: Enviar a la Empresa via WhatsApp Webhook ---
                     ElevatedButton.icon(
                       icon: _isSending
                           ? const SizedBox(
@@ -435,9 +523,41 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                               height: 20,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.cloud_upload_outlined,
+                          : const Icon(Icons.phone_android_rounded, // Icono de WhatsApp
+                              color: Colors.white),
+                      label: Text('Solicitar Cotizacion vía WhatsApp',
+                          style: GoogleFonts.poppins(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFF25D366), // Color típico de WhatsApp
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      // Llama a la nueva función que usa el webhook para enviar a la empresa
+                      onPressed: _isSending
+                          ? null
+                          : () async { // Esta es la función anónima que onPressed espera (VoidCallback)
+                          String nombreCiente = _nombreController.text.trim();
+        // Llama a tu función _enviarWhatsApp con los datos
+        // Como _enviarWhatsApp es async, la función anónima también debe ser async para usar await
+        await _enviarWhatsApp(_companyWhatsappNumber, nombreCiente);
+      }
+                    ),
+                    const SizedBox(height: 18),
+
+                    // --- BOTÓN Existente: Enviar a Firebase ---
+                    ElevatedButton.icon(
+                      icon: _isSending
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.calendar_month,
                               color: Colors.white), // Icono cambiado
-                      label: Text('Enviar y Solicitar Reunión',
+                      label: Text('Agendar Reunión',
                           style: GoogleFonts.poppins(
                               color: Colors.white)), // Mismo texto
                       style: ElevatedButton.styleFrom(
@@ -447,13 +567,14 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      // Llama a la nueva función asíncrona para guardar en Firebase
+                      // Llama a la función asíncrona para guardar en Firebase
                       onPressed:
                           _isSending ? null : _guardarCotizacionYNotificar,
                     ),
                     const SizedBox(height: 18),
 
-                    // Botón Descargar PDF (reutilizando la lógica)
+                    // Botón Descargar PDF (reutilizando la lógica existente)
+                    // Esta función NO SE MODIFICA
                     ElevatedButton.icon(
                       icon: const Icon(Icons.picture_as_pdf_outlined,
                           color: colorPrimario),
